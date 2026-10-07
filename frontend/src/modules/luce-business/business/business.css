@@ -5,17 +5,22 @@
 .lab-module-luce-business.business-shell .sidebar {
   overflow-y: auto;
 }
-.lab-module-luce-business .business-tag {
-  margin: 0 28px 24px;
-  display: inline-block;
-  width: max-content;
-  letter-spacing: 0.18em;
-  font-size: 0.68rem;
-  font-weight: 800;
-  color: #f5dcb3;
-  border: 1px solid #587363;
-  border-radius: 5px;
-  padding: 6px 10px;
+.lab-module-luce-business.business-shell .brand {
+  margin-right: 0;
+}
+.lab-module-luce-business.business-shell .brand > span {
+  flex-shrink: 0;
+}
+.lab-module-luce-business.business-shell .brand strong {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+  white-space: nowrap;
+}
+.lab-module-luce-business.business-shell .brand .brand-business {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 .lab-module-luce-business.business-shell .nav-caption {
   margin-top: 0;

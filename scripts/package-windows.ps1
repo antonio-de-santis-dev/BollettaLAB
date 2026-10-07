@@ -1,5 +1,6 @@
 param([string]$OutputRoot='dist-windows',[string]$JdkHome=$env:JAVA_HOME,[string]$MysqlVersion='8.4.11')
 $ErrorActionPreference='Stop'
+$ProgressPreference='SilentlyContinue'
 $repo=Split-Path $PSScriptRoot -Parent
 if($env:OS -ne 'Windows_NT' -or -not [Environment]::Is64BitOperatingSystem) { throw 'Compilare su Windows x64.' }
 if(-not (Test-Path -LiteralPath "$JdkHome\bin\jlink.exe")) { throw 'Serve JDK 17 sul PC che prepara il pacchetto, non sul PC del collega.' }

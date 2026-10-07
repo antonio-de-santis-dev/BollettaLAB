@@ -13,7 +13,7 @@ public class PlatformFilter extends OncePerRequestFilter {
   private final InternalClient client;
   private final Environment env;
   private final ObjectMapper json = new ObjectMapper();
-  private final Set<String> publicPaths = Set.of("/api/auth/register", "/api/auth/login", "/api/auth/forgot", "/api/auth/reset", "/api/auth/verify", "/api/auth/accept-invite", "/api/auth/config");
+  private final Set<String> publicPaths = Set.of("/api/auth/register", "/api/auth/login", "/api/auth/forgot-password", "/api/auth/reset-password", "/api/auth/verify-email", "/api/auth/accept-invite", "/api/auth/config");
   public PlatformFilter(IdentityProvider identities, InternalClient client, Environment env) {
     this.identities = identities; this.client = client; this.env = env;
     if (!env.getProperty("platform.security.enabled", Boolean.class, true) && !env.matchesProfiles("test"))
@@ -39,9 +39,9 @@ public class PlatformFilter extends OncePerRequestFilter {
       boolean simulator = !Set.of("utenti", "pagamento").contains(env.getProperty("platform.service"));
       if (simulator && !identity.admin()) {
         if (!identity.status().equals("ACTIVE")) throw new HttpProblem(403, "Completa l’attivazione dell’account");
-        if (!req.getMethod().equals("GET")) client.get(env.getProperty("platform.payments-url", "http://pagamento:8080") + "/internal/access/" + identity.workspaceId(), Map.class);
+        if (!req.getMethod().equals("GET")) { var access=client.get(env.getProperty("platform.payment-url", "http://pagamento:8080") + "/internal/access/" + identity.workspaceId(), Map.class); if(!Boolean.TRUE.equals(access.get("active"))) throw new HttpProblem(402,"Attiva o rinnova il piano per continuare"); }
       }
-      if (simulator && path.startsWith("/api/fonti/") && !req.getMethod().equals("GET") && !identity.admin())
+      if (simulator && !"gas".equals(env.getProperty("platform.service")) && (path.equals("/api/fonti") || path.startsWith("/api/fonti/")) && !req.getMethod().equals("GET") && !identity.admin())
         throw new HttpProblem(403, "Le fonti ufficiali globali sono gestite dall’amministratore");
       chain.doFilter(req, res);
     } catch (HttpProblem e) {

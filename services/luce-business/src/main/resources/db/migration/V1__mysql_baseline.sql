@@ -144,4 +144,4 @@ CREATE INDEX idx_business_profili_workspace ON business_profili(workspace_id);
 
 CREATE INDEX idx_business_simulazioni_workspace ON business_simulazioni(workspace_id);
 
-CREATE TABLE local_receipts(id VARCHAR(36) PRIMARY KEY,result_id BIGINT NOT NULL,state VARCHAR(20) NOT NULL,response_json LONGTEXT,created_at TIMESTAMP NOT NULL);
+CREATE TABLE local_receipts(id VARCHAR(36) PRIMARY KEY,workspace_id VARCHAR(36) NOT NULL,result_id BIGINT NOT NULL,state VARCHAR(20) NOT NULL,response_json LONGTEXT,created_at TIMESTAMP NOT NULL);

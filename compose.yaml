@@ -1,0 +1,134 @@
+name: bollettalab
+x-backend: &backend
+  restart: unless-stopped
+  depends_on:
+    mysql:
+      condition: service_healthy
+  healthcheck:
+    test: ["CMD", "curl", "-fsS", "http://localhost:8080/actuator/health"]
+    interval: 15s
+    timeout: 5s
+    retries: 12
+    start_period: 40s
+  mem_limit: 640m
+x-environment: &environment
+  SPRING_PROFILES_ACTIVE: ${APP_PROFILE:-dev}
+  INTERNAL_KEY: ${INTERNAL_KEY:?Avvia scripts/start.sh}
+  USERS_URL: http://utenti:8080
+  PAYMENT_URL: http://pagamento:8080
+services:
+  mysql:
+    image: mysql:8.4
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Avvia scripts/start.sh}
+      UTENTI_DB_PASSWORD: ${UTENTI_DB_PASSWORD:?Avvia scripts/start.sh}
+      PAGAMENTO_DB_PASSWORD: ${PAGAMENTO_DB_PASSWORD:?Avvia scripts/start.sh}
+      LUCE_DB_PASSWORD: ${LUCE_DB_PASSWORD:?Avvia scripts/start.sh}
+      BUSINESS_DB_PASSWORD: ${BUSINESS_DB_PASSWORD:?Avvia scripts/start.sh}
+      GAS_DB_PASSWORD: ${GAS_DB_PASSWORD:?Avvia scripts/start.sh}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./docker/mysql/init.sh:/docker-entrypoint-initdb.d/01-init.sh:ro
+    healthcheck:
+      test: ["CMD-SHELL", "MYSQL_PWD=$$MYSQL_ROOT_PASSWORD mysql -uroot -Nse 'SELECT 1'"]
+      interval: 10s
+      timeout: 5s
+      retries: 15
+      start_period: 40s
+  utenti:
+    <<: *backend
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+      args:
+        SERVICE: utenti
+    environment:
+      <<: *environment
+      DB_URL: jdbc:mysql://mysql:3306/utenti?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true
+      DB_USER: utenti
+      DB_PASSWORD: ${UTENTI_DB_PASSWORD:?Avvia scripts/start.sh}
+      PUBLIC_URL: ${PUBLIC_URL:-http://localhost:8091}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@bollettalab.local}
+      ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
+      SMTP_HOST: ${SMTP_HOST:-localhost}
+      SMTP_PORT: ${SMTP_PORT:-1025}
+      SMTP_USER: ${SMTP_USER:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_AUTH: ${SMTP_AUTH:-false}
+      SMTP_TLS: ${SMTP_TLS:-false}
+      MAIL_FROM: ${MAIL_FROM:-noreply@bollettalab.it}
+  pagamento:
+    <<: *backend
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+      args:
+        SERVICE: pagamento
+    environment:
+      <<: *environment
+      DB_URL: jdbc:mysql://mysql:3306/pagamento?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true
+      DB_USER: pagamento
+      DB_PASSWORD: ${PAGAMENTO_DB_PASSWORD:?Avvia scripts/start.sh}
+  luce:
+    <<: *backend
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+      args:
+        SERVICE: luce
+    environment:
+      <<: *environment
+      DB_URL: jdbc:mysql://mysql:3306/luce?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true
+      DB_USER: luce
+      DB_PASSWORD: ${LUCE_DB_PASSWORD:?Avvia scripts/start.sh}
+  luce-business:
+    <<: *backend
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+      args:
+        SERVICE: luce-business
+    environment:
+      <<: *environment
+      DB_URL: jdbc:mysql://mysql:3306/luce_business?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true
+      DB_USER: luce_business
+      DB_PASSWORD: ${BUSINESS_DB_PASSWORD:?Avvia scripts/start.sh}
+  gas:
+    <<: *backend
+    build:
+      context: .
+      dockerfile: Dockerfile.backend
+      args:
+        SERVICE: gas
+    environment:
+      <<: *environment
+      DB_URL: jdbc:mysql://mysql:3306/gas?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true
+      DB_USER: gas
+      DB_PASSWORD: ${GAS_DB_PASSWORD:?Avvia scripts/start.sh}
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile.frontend
+    restart: unless-stopped
+    ports:
+      - "${WEB_PORT:-8091}:80"
+    depends_on:
+      utenti:
+        condition: service_healthy
+      pagamento:
+        condition: service_healthy
+      luce:
+        condition: service_healthy
+      luce-business:
+        condition: service_healthy
+      gas:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://localhost/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+volumes:
+  mysql_data:

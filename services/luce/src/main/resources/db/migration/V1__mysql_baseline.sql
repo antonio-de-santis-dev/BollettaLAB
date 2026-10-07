@@ -108,4 +108,4 @@ CREATE INDEX idx_confronti_workspace ON confronti(workspace_id);
 
 CREATE INDEX idx_impostazioni_pdf_workspace ON impostazioni_pdf(workspace_id);
 
-CREATE TABLE local_receipts(id VARCHAR(36) PRIMARY KEY,result_id BIGINT NOT NULL,state VARCHAR(20) NOT NULL,response_json LONGTEXT,created_at TIMESTAMP NOT NULL);
+CREATE TABLE local_receipts(id VARCHAR(36) PRIMARY KEY,workspace_id VARCHAR(36) NOT NULL,result_id BIGINT NOT NULL,state VARCHAR(20) NOT NULL,response_json LONGTEXT,created_at TIMESTAMP NOT NULL);

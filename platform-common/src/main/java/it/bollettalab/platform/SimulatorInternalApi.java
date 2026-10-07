@@ -34,23 +34,12 @@ public class SimulatorInternalApi {
 
   @DeleteMapping("/internal/workspaces/{id}")
   @Transactional
-  Object purge(@PathVariable String id) {
+  public Object purge(@PathVariable String id) {
+    db.update("DELETE FROM local_receipts WHERE workspace_id=?", id);
     if ("gas".equals(env.getProperty("platform.service"))) {
-      db.update(
-          "DELETE FROM local_receipts WHERE result_id IN (SELECT id FROM gas_records WHERE"
-              + " workspace_id=?)",
-          id);
       db.update("DELETE FROM gas_records WHERE workspace_id=?", id);
     } else {
-      db.update(
-          "DELETE FROM local_receipts WHERE result_id IN (SELECT id FROM confronti WHERE"
-              + " workspace_id=?)",
-          id);
       if ("luce-business".equals(env.getProperty("platform.service"))) {
-        db.update(
-            "DELETE FROM local_receipts WHERE result_id IN (SELECT id FROM business_simulazioni"
-                + " WHERE workspace_id=?)",
-            id);
         db.update(
             "DELETE FROM business_revisioni_profili WHERE profilo_id IN (SELECT id FROM"
                 + " business_profili WHERE workspace_id=?)",

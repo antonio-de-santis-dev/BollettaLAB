@@ -9,4 +9,4 @@ CREATE TABLE gas_records (
 CREATE INDEX idx_gas_records_kind_id ON gas_records(kind, id);
 CREATE INDEX idx_gas_records_workspace ON gas_records(workspace_id);
 
-CREATE TABLE local_receipts(id VARCHAR(36) PRIMARY KEY,result_id BIGINT NOT NULL,state VARCHAR(20) NOT NULL,response_json LONGTEXT,created_at TIMESTAMP NOT NULL);
+CREATE TABLE local_receipts(id VARCHAR(36) PRIMARY KEY,workspace_id VARCHAR(36) NOT NULL,result_id BIGINT NOT NULL,state VARCHAR(20) NOT NULL,response_json LONGTEXT,created_at TIMESTAMP NOT NULL);

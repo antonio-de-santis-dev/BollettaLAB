@@ -12,6 +12,8 @@ import org.springframework.test.context.ActiveProfiles;
 @SpringBootTest
 @ActiveProfiles("test")
 class TenantIsolationTest {
+  @Autowired org.springframework.jdbc.core.JdbcTemplate jdbc;
+  @Autowired SimulatorInternalApi internalApi;
   @Autowired Records records;
   @Autowired GasService service;
 
@@ -50,5 +52,28 @@ class TenantIsolationTest {
     RequestContext.set(actor(a, user, "OWNER"));
     assertThat(records.findById(record.id)).isPresent();
     assertThat(service.list("confronti")).hasSize(1);
+  }
+
+  @Test
+  void deletingAWorkspaceKeepsOtherReceiptsEvenWhenResultIdsOverlap() {
+    String a = UUID.randomUUID().toString(),
+        b = UUID.randomUUID().toString(),
+        ra = UUID.randomUUID().toString(),
+        rb = UUID.randomUUID().toString();
+    for (var pair : java.util.List.of(java.util.List.of(ra, a), java.util.List.of(rb, b)))
+      jdbc.update(
+          "INSERT INTO local_receipts(id,workspace_id,result_id,state,response_json,created_at)"
+              + " VALUES(?,?,1,'COMPLETE','{}',CURRENT_TIMESTAMP)",
+          pair.get(0),
+          pair.get(1));
+    internalApi.purge(a);
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT COUNT(*) FROM local_receipts WHERE workspace_id=?", Integer.class, a))
+        .isZero();
+    assertThat(
+            jdbc.queryForObject(
+                "SELECT COUNT(*) FROM local_receipts WHERE workspace_id=?", Integer.class, b))
+        .isEqualTo(1);
   }
 }

@@ -4,6 +4,7 @@ import jakarta.persistence.*;
 import org.hibernate.annotations.TenantId;
 
 @MappedSuperclass
+@EntityListeners(WorkspaceGuard.class)
 public abstract class ScopedEntity {
   @TenantId
   @Column(name = "workspace_id", nullable = false, length = 36)

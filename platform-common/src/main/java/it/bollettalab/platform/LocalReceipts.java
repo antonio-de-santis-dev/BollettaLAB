@@ -35,9 +35,10 @@ public class LocalReceipts {
     if (id != null) {
       try {
         db.update(
-            "INSERT INTO local_receipts(id,result_id,state,response_json,created_at)"
-                + " VALUES(?,?,'SAVED',?,?)",
+            "INSERT INTO local_receipts(id,workspace_id,result_id,state,response_json,created_at)"
+                + " VALUES(?,?,?,'SAVED',?,?)",
             id,
+            RequestContext.workspace(),
             resultId,
             json.writeValueAsString(response),
             Timestamp.from(Instant.now()));

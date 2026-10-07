@@ -1,3 +1,4 @@
+CREATE TABLE workspace_state(workspace_id VARCHAR(36) PRIMARY KEY,deleted BOOLEAN NOT NULL DEFAULT FALSE);
 CREATE TABLE offerte (
   workspace_id VARCHAR(36) NOT NULL DEFAULT 'test', author_id VARCHAR(36), author_name VARCHAR(200), company_name VARCHAR(200), company_vat VARCHAR(20), company_address VARCHAR(300),
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
@@ -144,4 +145,4 @@ CREATE INDEX idx_business_profili_workspace ON business_profili(workspace_id);
 
 CREATE INDEX idx_business_simulazioni_workspace ON business_simulazioni(workspace_id);
 
-CREATE TABLE local_receipts(id VARCHAR(36) PRIMARY KEY,result_id BIGINT NOT NULL,state VARCHAR(20) NOT NULL,response_json LONGTEXT,created_at TIMESTAMP NOT NULL);
+CREATE TABLE local_receipts(id VARCHAR(36) PRIMARY KEY,workspace_id VARCHAR(36) NOT NULL,result_id BIGINT NOT NULL,state VARCHAR(20) NOT NULL,response_json LONGTEXT,created_at TIMESTAMP NOT NULL);

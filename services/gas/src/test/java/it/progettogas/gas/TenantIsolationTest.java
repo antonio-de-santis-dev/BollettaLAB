@@ -76,4 +76,15 @@ class TenantIsolationTest {
                 "SELECT COUNT(*) FROM local_receipts WHERE workspace_id=?", Integer.class, b))
         .isEqualTo(1);
   }
+
+  @Test
+  void aRequestAuthenticatedBeforeDeletionCannotRecreateData() {
+    String workspace = UUID.randomUUID().toString();
+    RequestContext.set(actor(workspace, UUID.randomUUID().toString(), "OWNER"));
+    records.saveAndFlush(new RecordEntity("confronti", "{}"));
+    internalApi.purge(workspace);
+    assertThatThrownBy(() -> records.saveAndFlush(new RecordEntity("confronti", "{}")))
+        .isInstanceOf(RuntimeException.class);
+    assertThat(records.findByKindOrderByIdDesc("confronti")).isEmpty();
+  }
 }

@@ -12,7 +12,7 @@ Una simulazione prima prenota la quota, poi salva risultato e ricevuta nella ste
 
 ## Verifiche eseguite localmente
 
-- 149 test Java: tre motori, API, snapshot/PDF, utenti, quote concorrenti, autorizzazioni, UTF-8 del risultato ripetuto e isolamento account/agenti.
+- 150 test Java: tre motori, API, snapshot/PDF, utenti, quote concorrenti, autorizzazioni, UTF-8 del risultato ripetuto e isolamento account/agenti.
 - 54 test frontend e build TypeScript/Vite.
 - Cinque servizi avviati insieme per prove HTTP: tre simulatori, importo luce 77 €, gas 392,61 €, PDF, quota condivisa, retry idempotenti, limite due agenti, isolamento e revoca sessioni.
 - Due prove Chromium: Welcome/registrazione/login/navigazione mobile e impresa/agenti/PDF/quota zero/storico.

@@ -12,10 +12,12 @@ import org.springframework.web.bind.annotation.*;
 public class SimulatorInternalApi {
   final JdbcTemplate db;
   final Environment env;
+  final WorkspaceGuard guard;
 
-  public SimulatorInternalApi(JdbcTemplate db, Environment env) {
+  public SimulatorInternalApi(JdbcTemplate db, Environment env, WorkspaceGuard guard) {
     this.db = db;
     this.env = env;
+    this.guard = guard;
   }
 
   @GetMapping("/internal/operations/{id}")
@@ -35,6 +37,7 @@ public class SimulatorInternalApi {
   @DeleteMapping("/internal/workspaces/{id}")
   @Transactional
   public Object purge(@PathVariable String id) {
+    guard.markDeleted(id);
     db.update("DELETE FROM local_receipts WHERE workspace_id=?", id);
     if ("gas".equals(env.getProperty("platform.service"))) {
       db.update("DELETE FROM gas_records WHERE workspace_id=?", id);

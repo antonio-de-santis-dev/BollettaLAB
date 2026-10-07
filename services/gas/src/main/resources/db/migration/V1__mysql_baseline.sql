@@ -1,3 +1,4 @@
+CREATE TABLE workspace_state(workspace_id VARCHAR(36) PRIMARY KEY,deleted BOOLEAN NOT NULL DEFAULT FALSE);
 CREATE TABLE gas_records (
   workspace_id VARCHAR(36) NOT NULL DEFAULT 'test', author_id VARCHAR(36), author_name VARCHAR(200), company_name VARCHAR(200), company_vat VARCHAR(20), company_address VARCHAR(300),
   id BIGINT AUTO_INCREMENT PRIMARY KEY,

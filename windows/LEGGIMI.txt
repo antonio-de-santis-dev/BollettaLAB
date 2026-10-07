@@ -1,0 +1,31 @@
+BollettaLAB - Windows x64
+
+1. Estrai TUTTO lo ZIP in una cartella scrivibile, ad esempio Documenti\BollettaLAB.
+2. Doppio clic su "Avvia BollettaLAB.cmd". La prima apertura inizializza MySQL;
+   attendi che compaia il browser. Apri http://127.0.0.1:8091 se necessario.
+3. "Credenziali Admin.cmd" mostra email e password iniziale generate sul tuo PC.
+4. Quando hai finito usa "Ferma BollettaLAB.cmd". Chiudere il browser non ferma
+   i servizi. I dati restano in data, i log in logs.
+
+Non servono Java/JDK, Docker, Node, Maven o MySQL installati. Runtime Java,
+MySQL e dipendenze native sono inclusi. Nessun servizio Windows viene installato.
+Richiede Windows 10/11 x64 aggiornato, browser moderno, almeno 8 GB RAM
+consigliati e circa 2 GB liberi tra estrazione e primi dati. Non eseguire dentro ZIP,
+Program Files, cartelle di rete o cartelle sincronizzate mentre l'app e aperta.
+
+Versione locale per prove: gli acquisti sono SIMULATI, senza addebiti Stripe.
+Login, registrazione, due agenti, quota 80, storico e PDF sono gli stessi della web app.
+I dati del Docker/server non vengono importati e questo PC usa un database separato.
+Senza internet puoi lavorare con i dati inseriti; fonti ufficiali online richiedono rete.
+
+Se una porta e occupata (8091, 8101-8105, 33079), chiudi l'altra copia o il Docker
+di BollettaLAB. Non avviare due cartelle della stessa app contemporaneamente.
+In caso di errore usa Ferma, leggi logs e riprova: non eliminare data.
+
+Backup: FERMA l'app e copia l'intera cartella data in una posizione sicura.
+Aggiornamento: FERMA l'app, conserva data, estrai il nuovo pacchetto e copia data
+al suo interno. Non mescolare file di versioni differenti mentre sono in esecuzione.
+La cartella data contiene dati personali e credenziali: non condividerla con lo ZIP.
+La password mostrata e quella iniziale; dopo un reset usa la nuova password.
+
+Licenze runtime e MySQL incluse nelle rispettive cartelle e in licenses.

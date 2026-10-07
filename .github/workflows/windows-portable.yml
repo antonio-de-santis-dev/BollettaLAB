@@ -1,0 +1,69 @@
+name: BollettaLAB Windows portable
+on:
+  push:
+    branches: [vaio-windos]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Build Java services and verify gateway
+        shell: pwsh
+        run: |
+          mvn -B -pl platform-common -am test
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          mvn -B -DskipTests package
+          exit $LASTEXITCODE
+      - name: Build frontend
+        shell: pwsh
+        working-directory: frontend
+        run: |
+          npm ci
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          npm run build
+          exit $LASTEXITCODE
+      - name: Create portable ZIP
+        shell: powershell
+        run: ./scripts/package-windows.ps1
+      - name: Extract ZIP to a path with spaces
+        shell: powershell
+        run: Expand-Archive -LiteralPath dist-windows/BollettaLAB-Windows-x64.zip -DestinationPath 'test package'
+      - name: Install browser for runner tests only
+        working-directory: frontend
+        run: npx playwright install chromium
+      - name: Test actual package on Windows
+        shell: powershell
+        run: ./scripts/test-windows.ps1 -PackageRoot 'test package/BollettaLAB-Windows-x64'
+      - name: Publish tested ZIP and checksum
+        uses: actions/upload-artifact@v4
+        with:
+          name: BollettaLAB-Windows-x64
+          path: |
+            dist-windows/BollettaLAB-Windows-x64.zip
+            dist-windows/SHA256.txt
+          compression-level: 0
+          retention-days: 30
+      - name: Diagnostic logs
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: Windows-diagnostics
+          path: |
+            test package/BollettaLAB-Windows-x64/logs/
+            frontend/playwright-report/
+            frontend/test-results/
+          retention-days: 7

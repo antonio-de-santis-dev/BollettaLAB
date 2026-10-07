@@ -8,9 +8,11 @@ import org.springframework.web.bind.annotation.*;
 @RestController
 public class PaymentsApi {
   final Wallets wallets;
+  final org.springframework.core.env.Environment env;
 
-  PaymentsApi(Wallets w) {
+  PaymentsApi(Wallets w, org.springframework.core.env.Environment env) {
     wallets = w;
+    this.env = env;
   }
 
   @org.springframework.scheduling.annotation.Scheduled(fixedDelay = 60000)
@@ -26,7 +28,11 @@ public class PaymentsApi {
             wallets
                 .internal()
                 .get(
-                    "http://" + r.get("simulator") + ":8080/internal/operations/" + r.get("id"),
+                    env.getProperty(
+                            "platform.domain-urls." + r.get("simulator"),
+                            "http://" + r.get("simulator") + ":8080")
+                        + "/internal/operations/"
+                        + r.get("id"),
                     Map.class);
         if (Boolean.TRUE.equals(status.get("saved")))
           wallets.complete(

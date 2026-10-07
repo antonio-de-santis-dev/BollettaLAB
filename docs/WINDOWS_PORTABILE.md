@@ -48,3 +48,7 @@ La CI estrae lo ZIP in un percorso con spazi, avvia il pacchetto con PATH senza 
 I test gateway verificano percorsi SPA, JavaScript, Cookie, PDF, UTF-8, idempotenza, limite dimensione richieste, blocco delle origini estranee e protezione dell'arresto. Lo ZIP viene pubblicato solo se le prove del pacchetto passano. Il test su runner non sostituisce una prova su ogni modello di VAIO/Windows del destinatario.
 
 Per le simulazioni usa `DATI-DI-TEST.md`, incluso nello ZIP, o [TEST_MANUALI.md](TEST_MANUALI.md).
+
+## Risultato verificato
+
+Il pacchetto del commit `c65ff919cdfa99623e6ae2042b634aef787c2022` ha superato le prove Windows: build, sei test della libreria comune, estrazione in percorso con spazi, avvio con PATH senza tool, doppio avvio, login admin, regressioni HTTP sui tre simulatori, due prove Chromium, arresto e riavvio con account conservato. [Esecuzione Windows e artifact ZIP](https://github.com/antonio-de-santis-dev/BollettaLAB/actions/runs/37648194253). Le successive modifiche alla documentazione non cambiano il programma incluso in questo ZIP.

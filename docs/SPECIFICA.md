@@ -21,7 +21,7 @@ Realizzare una web application con frontend React, backend Java Spring Boot, dat
 - storico delle simulazioni e download dei PDF;
 - interfaccia amministrativa per la gestione della piattaforma.
 
-La struttura funzionale e il linguaggio grafico dei programmi esistenti costituiscono il riferimento. La nuova applicazione deve essere avviabile con Docker. Non è prevista una versione portatile per Windows.
+La struttura funzionale e il linguaggio grafico dei programmi esistenti costituiscono il riferimento. La nuova applicazione deve essere avviabile con Docker. È stato richiesto successivamente un pacchetto Windows opzionale per prove locali senza JDK o Docker installati, sviluppato nel branch `vaio-windos`: vedere [WINDOWS_PORTABILE.md](WINDOWS_PORTABILE.md).
 
 ## 2. Decisioni confermate
 

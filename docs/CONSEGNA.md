@@ -17,7 +17,7 @@ Una simulazione prima prenota la quota, poi salva risultato e ricevuta nella ste
 - Cinque servizi avviati insieme per prove HTTP: tre simulatori, importo luce 77 €, gas 392,61 €, PDF, quota condivisa, retry idempotenti, limite due agenti, isolamento e revoca sessioni.
 - Due prove Chromium: Welcome/registrazione/login/navigazione mobile e impresa/agenti/PDF/quota zero/storico.
 
-Le prove Java e HTTP locali usano **H2 in modalità MySQL**. Non equivalgono a una verifica di MySQL reale. La CI comprende un job dedicato che avvia Docker con MySQL 8.4 ed esegue gli stessi flussi HTTP/browser; il suo risultato viene verificato separatamente. Docker non è disponibile in questo ambiente locale.
+Le prove Java e HTTP locali usano **H2 in modalità MySQL**. La verifica separata su **MySQL 8.4 reale**, con i cinque servizi e il frontend in Docker, ha superato avvio, regressioni HTTP e le due prove Chromium. Anche i job Java e React sono verdi: [esecuzione CI verificata](https://github.com/antonio-de-santis-dev/BollettaLAB/actions/runs/37640156987), commit `232fbffb63beef008ff7d472404b803f75d08f83`. Docker non è disponibile nell’ambiente locale: la prova Docker/MySQL è stata eseguita dal runner GitHub Actions.
 
 ## Prima dell'uso commerciale
 

@@ -11,7 +11,7 @@ In GitHub apri **Actions → BollettaLAB Windows portable**, seleziona l'ultima 
 3. `Credenziali Admin.cmd` mostra email e password iniziale generate sul PC. Accedi normalmente, oppure registra un privato/impresa.
 4. Usa `Ferma BollettaLAB.cmd` prima di spegnere o copiare i dati. Chiudere il browser non arresta i processi.
 
-Il destinatario non deve installare JDK/Java, Docker, MySQL, Node o Maven. Nessun servizio di Windows è registrato; non sono richiesti privilegi amministrativi dal launcher. Occorre Windows 10/11 x64 aggiornato e un browser moderno. Consigliati almeno 8 GB RAM e 2 GB liberi; il consumo effettivo varia con uso e dati. Le DLL MSVC ridistribuibili sono collocate accanto agli eseguibili, non installate globalmente.
+Il destinatario non deve installare JDK/Java, Docker, MySQL, Node o Maven. Nessun servizio di Windows è registrato; non sono richiesti privilegi amministrativi dal launcher. Occorre Windows 10/11 x64 aggiornato e un browser moderno. Consigliati almeno 8 GB RAM e 4 GB liberi; il consumo effettivo varia con uso e dati. Le DLL MSVC ridistribuibili sono collocate accanto agli eseguibili, non installate globalmente.
 
 ## Dati e sicurezza locale
 

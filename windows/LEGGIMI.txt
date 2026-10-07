@@ -10,7 +10,7 @@ BollettaLAB - Windows x64
 Non servono Java/JDK, Docker, Node, Maven o MySQL installati. Runtime Java,
 MySQL e dipendenze native sono inclusi. Nessun servizio Windows viene installato.
 Richiede Windows 10/11 x64 aggiornato, browser moderno, almeno 8 GB RAM
-consigliati e circa 2 GB liberi tra estrazione e primi dati. Non eseguire dentro ZIP,
+consigliati e almeno 4 GB liberi consigliati tra estrazione e primi dati. Non eseguire dentro ZIP,
 Program Files, cartelle di rete o cartelle sincronizzate mentre l'app e aperta.
 
 Versione locale per prove: gli acquisti sono SIMULATI, senza addebiti Stripe.

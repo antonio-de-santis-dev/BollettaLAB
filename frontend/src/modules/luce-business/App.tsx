@@ -67,11 +67,10 @@ export default function App() {
           <div>
             progetto
             <strong>
-              luce<span>.</span>
+              luce<span className="brand-business">Business</span>
             </strong>
           </div>
         </Link>
-        <span className="business-tag">BUSINESS</span>
         <p className="nav-caption">PROGETTO LUCE BUSINESS</p>
         <nav aria-label="Navigazione principale">
           {nav.map((n) => (

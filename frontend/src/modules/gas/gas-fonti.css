@@ -1,0 +1,30 @@
+.lab-module-gas .gas-fonti-page .panel { padding: 24px; }
+.lab-module-gas .gas-fonti-page .panel-top { gap: 20px; align-items: center; margin-bottom: 24px; }
+.lab-module-gas .gas-fonti-page .panel-top p { margin-top: 8px; color: var(--muted); font-size: .85rem; line-height: 1.6; }
+.lab-module-gas .gas-fonti-tabs { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px; }
+.lab-module-gas .gas-fonti-tabs button { padding: 10px 16px; border: 1px solid var(--border); border-radius: 8px; background: transparent; font: inherit; font-size: .8rem; cursor: pointer; }
+.lab-module-gas .gas-fonti-tabs button.active { background: var(--primary); color: white; border-color: #194d3d; }
+.lab-module-gas .gas-fonti-cards { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 16px; }
+.lab-module-gas .gas-fonte-card { border: 1px solid var(--border); border-radius: 12px; padding: 22px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.lab-module-gas .gas-fonte-meta { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+.lab-module-gas .gas-fonte-meta small { color: var(--muted); }
+.lab-module-gas .gas-fonte-card h3 { font-size: 1.05rem; }
+.lab-module-gas .gas-fonte-card p { font-size: .85rem; line-height: 1.65; }
+.lab-module-gas .gas-fonte-card .help { color: var(--muted); }
+.lab-module-gas .gas-fonte-card .button { align-self: flex-start; margin-top: auto; }
+.lab-module-gas .gas-fonti-note { border-top: 1px solid var(--border); padding-top: 20px; margin-top: 24px; font-size: .8rem; line-height: 1.65; color: var(--muted); }
+.lab-module-gas .gas-fonti-filter { display: flex; align-items: end; gap: 12px; margin-bottom: 20px; }
+.lab-module-gas .gas-fonti-filter .field { max-width: 280px; }
+.lab-module-gas .gas-fonti-records { display: grid; gap: 12px; }
+.lab-module-gas .gas-fonti-record { display: grid; grid-template-columns: 180px minmax(0, 1fr) auto; gap: 24px; align-items: center; border: 1px solid var(--border); border-radius: 10px; padding: 20px; }
+.lab-module-gas .gas-fonti-record h3 { font-size: 1.35rem; margin: 10px 0; }
+.lab-module-gas .gas-fonti-record h3 small { font-size: .75rem; color: var(--muted); }
+.lab-module-gas .gas-fonti-provenienza { overflow-wrap: anywhere; font-size: .85rem; line-height: 1.6; }
+.lab-module-gas .gas-fonti-provenienza p { margin-top: 6px; color: var(--muted); }
+.lab-module-gas .gas-fonti-record-actions { display: flex; gap: 10px; flex-wrap: wrap; }
+.lab-module-gas .gas-fonti-record-actions .text-button { display: inline-flex; gap: 6px; align-items: center; }
+.lab-module-gas .gas-fonti-empty { text-align: center; padding: 32px 16px; color: var(--muted); }
+.lab-module-gas .gas-fonti-empty h3 { margin: 12px 0; color: var(--primary); }
+.lab-module-gas .gas-fonti-empty p { font-size: .85rem; line-height: 1.6; }
+@media(max-width: 1000px) { .lab-module-gas .gas-fonti-record { grid-template-columns: 160px minmax(0, 1fr); }.lab-module-gas .gas-fonti-record-actions { grid-column: 1 / -1; } }
+@media(max-width: 600px) { .lab-module-gas .gas-fonti-page .panel { padding: 16px; }.lab-module-gas .gas-fonti-page .panel-top { flex-direction: column; align-items: stretch; }.lab-module-gas .gas-fonti-cards { grid-template-columns: 1fr; }.lab-module-gas .gas-fonte-card { padding: 18px; }.lab-module-gas .gas-fonti-record { grid-template-columns: 1fr; gap: 16px; padding: 16px; }.lab-module-gas .gas-fonti-record-actions { grid-column: auto; }.lab-module-gas .gas-fonti-tabs button { flex: 1; }.lab-module-gas .gas-fonti-filter .field { flex: 1; } }

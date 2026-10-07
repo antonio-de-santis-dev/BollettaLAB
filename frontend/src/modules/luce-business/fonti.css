@@ -1,0 +1,203 @@
+/* Stili limitati ai componenti nuovi: i fogli delle altre sezioni restano invariati. */
+.lab-module-luce-business .fonti-page > .panel {
+  margin-bottom: 24px;
+}
+.lab-module-luce-business .fonti-page .panel-top {
+  border-bottom: 1px solid var(--border);
+  margin-bottom: 24px;
+}
+.lab-module-luce-business .fonti-page .fonti-sync > p,
+.lab-module-luce-business .fonti-page .fonti-panel > p,
+.lab-module-luce-business .fonti-page .fonti-panel > .form-grid {
+  margin: 0;
+  padding: 0 24px 24px;
+}
+.lab-module-luce-business .fonti-page .fonti-sync > .field {
+  margin: 0 24px 24px;
+  max-width: 340px;
+}
+.lab-module-luce-business .fonti-page .fonti-sync > details {
+  margin: 0 24px 24px;
+}
+.lab-module-luce-business .fonti-page .fonti-sync details summary {
+  cursor: pointer;
+  font-size: 0.83rem;
+  font-weight: 600;
+  padding: 12px 0;
+}
+.lab-module-luce-business .fonti-page .fonti-actions {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.lab-module-luce-business .fonti-page .fonti-form > .fonti-actions {
+  padding: 20px 24px;
+  border-top: 1px solid var(--border);
+  background: #f8faf5;
+}
+.lab-module-luce-business .fonti-page .fonti-form .form-grid > .field:last-child {
+  grid-column: 1 / -1;
+}
+.lab-module-luce-business .fonti-page .fonti-table {
+  min-width: 680px;
+}
+.lab-module-luce-business .fonti-page .fonti-table td {
+  padding: 18px 24px;
+  vertical-align: top;
+  white-space: normal;
+}
+.lab-module-luce-business .fonti-page .fonti-table th {
+  padding: 14px 24px;
+}
+.lab-module-luce-business .fonti-page .fonti-table small {
+  display: block;
+  color: var(--muted);
+  margin-top: 6px;
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+.lab-module-luce-business .fonti-page .fonti-table td:nth-child(2),
+.lab-module-luce-business .fonti-page .fonti-table td:nth-child(3) {
+  font-variant-numeric: tabular-nums;
+}
+.lab-module-luce-business .fonti-page .fonti-table .badge {
+  display: inline-block;
+  margin-top: 6px;
+}
+.lab-module-luce-business .fonti-page .fonti-esiti {
+  list-style: none;
+  margin: 0 24px 24px;
+  padding: 0;
+  display: grid;
+  gap: 12px;
+}
+.lab-module-luce-business .fonti-page .fonti-sync .fonti-esiti {
+  margin: 12px 0 0;
+}
+.lab-module-luce-business .fonti-page .fonti-esiti li {
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.82rem;
+}
+.lab-module-luce-business .fonti-page .fonti-esiti span {
+  display: block;
+  color: var(--muted);
+  font-size: 0.72rem;
+  margin: 6px 0 10px;
+}
+.lab-module-luce-business .fonti-page .fonti-esiti p {
+  line-height: 1.6;
+}
+.lab-module-luce-business .fonti-page .fonti-notice {
+  margin: 0 0 24px;
+  padding: 16px 20px;
+  background: #e8f4ec;
+  border: 1px solid #c7dfce;
+  border-radius: 10px;
+  color: #166534;
+  font-size: 0.85rem;
+}
+.lab-module-luce-business .fonti-page > .error {
+  margin-bottom: 24px;
+}
+.lab-module-luce-business .compare-form .fonti-choice {
+  margin: 20px 24px 0;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #f8faf5;
+  padding: 16px 18px;
+  font-size: 0.81rem;
+}
+.lab-module-luce-business .compare-form .fonti-choice summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.lab-module-luce-business .compare-form .fonti-choice > label,
+.lab-module-luce-business .compare-form .fonti-choice > p {
+  margin-top: 16px;
+}
+.lab-module-luce-business .compare-form .fonti-choice > label {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  line-height: 1.6;
+}
+.lab-module-luce-business .compare-form .fonti-choice > .field {
+  display: flex;
+  flex-direction: column;
+  max-width: 360px;
+}
+.lab-module-luce-business .compare-form .fonti-choice input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  accent-color: var(--primary);
+}
+@media (max-width: 700px) {
+  .lab-module-luce-business .fonti-page .fonti-sync > p,
+  .lab-module-luce-business .fonti-page .fonti-panel > p,
+  .lab-module-luce-business .fonti-page .fonti-panel > .form-grid {
+    padding: 0 20px 20px;
+  }
+  .lab-module-luce-business .fonti-page .fonti-form > .fonti-actions {
+    padding: 20px;
+  }
+  .lab-module-luce-business .fonti-page .fonti-sync > details,
+  .lab-module-luce-business .fonti-page .fonti-sync > .field {
+    margin: 0 20px 20px;
+  }
+  .lab-module-luce-business .fonti-page .fonti-esiti {
+    margin: 0 20px 20px;
+  }
+  .lab-module-luce-business .fonti-page .fonti-table {
+    min-width: 0;
+  }
+  .lab-module-luce-business .fonti-page .fonti-table thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  .lab-module-luce-business .fonti-page .fonti-table,
+  .lab-module-luce-business .fonti-page .fonti-table tbody {
+    display: block;
+    width: 100%;
+  }
+  .lab-module-luce-business .fonti-page .fonti-table tr {
+    display: block;
+    margin: 0 20px 16px;
+    padding: 8px 0;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+  }
+  .lab-module-luce-business .fonti-page .fonti-table td {
+    display: grid;
+    grid-template-columns: minmax(95px, 0.85fr) minmax(0, 1.15fr);
+    gap: 12px;
+    padding: 10px 14px;
+    border: 0;
+    overflow-wrap: anywhere;
+  }
+  .lab-module-luce-business .fonti-page .fonti-table td::before {
+    content: attr(data-label);
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .lab-module-luce-business .fonti-page .fonti-table small,
+  .lab-module-luce-business .fonti-page .fonti-table .badge {
+    grid-column: 2;
+    margin-top: 0;
+  }
+  .lab-module-luce-business .fonti-page .fonti-table .fonti-actions {
+    gap: 8px;
+  }
+  .lab-module-luce-business .compare-form .fonti-choice {
+    padding: 14px;
+  }
+}

@@ -2,7 +2,7 @@
 
 ## Implementato
 
-Cinque microservizi Spring Boot (Utenti, Pagamento, Luce, Luce Business, Gas), libreria comune, frontend React unico, cinque database MySQL con utenze separate, proxy Nginx e avvio Docker sulla porta 8091. Nessuna versione scaricabile Windows.
+Cinque microservizi Spring Boot (Utenti, Pagamento, Luce, Luce Business, Gas), libreria comune, frontend React unico, cinque database MySQL con utenze separate, proxy Nginx e avvio Docker sulla porta 8091. Il pacchetto Windows opzionale, richiesto successivamente per prove locali, è descritto in [WINDOWS_PORTABILE.md](WINDOWS_PORTABILE.md). L’avvio Docker rimane quello principale.
 
 La Welcome, il login unico, la registrazione privata/impresa, l'attivazione dopo checkout, i due agenti iniziali, il saldo condiviso, i pacchetti di prova, il popup a quota zero, storico, PDF e le interfacce titolare/admin sono implementati. Password BCrypt, sessioni opache revocabili, link monouso, controlli di autorizzazione sul server e isolamento delle query. Autore e dati dell'impresa sono salvati nelle entità e riportati nei PDF.
 
@@ -28,3 +28,7 @@ Le 80 simulazioni scadono alla fine del periodo mensile: la nuova assegnazione r
 Prima di esporre l'app pubblicamente: ambiente senza provider di prova, Stripe e webhook verificati, HTTPS con cookie Secure, SMTP per verifica/inviti/reset, backup, condizioni d'uso/privacy e politica di conservazione. I log operativi completi sono disponibili in Docker; il pannello admin mostra attività degli account e movimenti delle quote.
 
 Le migrazioni sono per una nuova installazione MySQL. I database PostgreSQL precedenti non sono stati forniti e non sono stati importati: la migrazione dei dati reali richiede una lavorazione controllata distinta. Non sono inclusi dati o credenziali reali.
+
+## Aggiunta Windows portabile
+
+Il branch `vaio-windos` aggiunge un pacchetto locale con Java, MySQL e dipendenze native inclusi, Avvia/Ferma e lettura delle credenziali admin. Il workflow Windows del commit `c65ff919cdfa99623e6ae2042b634aef787c2022` ha superato primo avvio, doppio avvio, regressioni HTTP e browser, arresto e persistenza al riavvio. [Verifica e download](https://github.com/antonio-de-santis-dev/BollettaLAB/actions/runs/37648194253). I tre nuovi test del gateway portano a 153 il totale Java verificato anche dalla CI; i dati Windows sono separati dai dati Docker. Vedi [WINDOWS_PORTABILE.md](WINDOWS_PORTABILE.md).

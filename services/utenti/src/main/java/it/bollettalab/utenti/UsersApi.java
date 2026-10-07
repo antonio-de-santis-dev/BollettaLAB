@@ -199,7 +199,10 @@ public class UsersApi {
     }
     accounts.jdbc().update("UPDATE workspaces SET status='DELETING' WHERE id=?", w);
     for (String service : List.of("luce", "luce-business", "gas", "pagamento"))
-      client.delete("http://" + service + ":8080/internal/workspaces/" + w);
+      client.delete(
+          env.getProperty("platform.domain-urls." + service, "http://" + service + ":8080")
+              + "/internal/workspaces/"
+              + w);
     accounts.jdbc().update("DELETE FROM account_tokens WHERE workspace_id=?", w);
     accounts.jdbc().update("DELETE FROM accounts WHERE workspace_id=?", w);
     accounts.jdbc().update("DELETE FROM workspaces WHERE id=?", w);

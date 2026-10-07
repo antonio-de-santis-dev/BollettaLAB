@@ -6,3 +6,6 @@
 **/playwright-report
 **/test-results
 *.log
+
+dist-windows/
+test package/

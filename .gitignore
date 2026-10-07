@@ -10,3 +10,5 @@
 .DS_Store
 coverage/
 *.tsbuildinfo
+dist-windows/
+test package/

@@ -39,6 +39,8 @@ I cinque backend e MySQL non espongono porte sull'host. Nginx serve React e inst
 
 ## Documentazione
 
+Versione per un collega su Windows, senza Java o Docker installati: branch `vaio-windos`, [istruzioni del pacchetto portabile](docs/WINDOWS_PORTABILE.md). Lo ZIP viene prodotto e verificato dal workflow Windows dedicato; include MySQL e dati locali separati.
+
 - [Specifiche](docs/SPECIFICA.md)
 - [Architettura e decisioni](docs/ARCHITETTURA.md)
 - [Skill applicate](docs/SKILL.md) e [sistema grafico](docs/DESIGN.md)

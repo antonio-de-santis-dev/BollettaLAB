@@ -50,6 +50,8 @@ function Start-Owned($name,$exe,$parameters,$variables) {
             if(Test-Path -LiteralPath $log) { Move-Item -LiteralPath $log -Destination ($log+'.previous') -Force }
         }
         $process=Start-Process -FilePath $exe -ArgumentList $parameters -WorkingDirectory $root -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $root "logs\$name.log") -RedirectStandardError (Join-Path $root "logs\$name.error.log")
+        # Conservare il handle: PowerShell 5.1 altrimenti puo restituire ExitCode nullo dopo WaitForExit.
+        $null=$process.Handle
         $entry=[pscustomobject]@{Name=$name;Executable=$exe;ProcessId=$process.Id;StartTicks=$process.StartTime.ToUniversalTime().Ticks.ToString()}
         $script:state.Processes=@($script:state.Processes)+$entry
         Save-State
@@ -157,7 +159,10 @@ try {
     if(-not (Test-Path -LiteralPath (Join-Path $data 'mysql\mysql'))) {
         Write-Host 'Prima inizializzazione MySQL...'
         $initialization=Start-Owned 'mysql-init' $mysqld @(('"--defaults-file='+$ini+'"'),'--initialize-insecure','--console') @{}
-        if(-not $initialization.WaitForExit(120000) -or $initialization.ExitCode -ne 0) { throw 'Inizializzazione MySQL fallita. Consulta logs\mysql-init.error.log.' }
+        if(-not $initialization.WaitForExit(120000) -or $initialization.ExitCode -ne 0) {
+            Get-Content -LiteralPath (Join-Path $root 'logs\mysql-init.error.log') -Tail 20 -ErrorAction SilentlyContinue | ForEach-Object { Write-Host $_ }
+            throw "Inizializzazione MySQL fallita (ExitCode=$($initialization.ExitCode)). Consulta logs\mysql-init.error.log."
+        }
     }
     $parameters=@(('"--defaults-file='+$ini+'"'),'--console')
     if(-not (Test-Path -LiteralPath $installed)) { $parameters+=('"--init-file='+$bootstrap+'"') }

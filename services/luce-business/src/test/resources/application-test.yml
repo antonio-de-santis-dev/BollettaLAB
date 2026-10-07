@@ -1,0 +1,15 @@
+spring:
+  datasource:
+    url: jdbc:h2:mem:luce;MODE=MySQL;DATABASE_TO_LOWER=TRUE;DEFAULT_NULL_ORDERING=HIGH;DB_CLOSE_DELAY=-1
+    username: sa
+    password: ""
+
+fonti:
+  automatico: false
+
+platform:
+  simulator: true
+  service: luce-business
+  internal-key: 01234567890123456789012345678901
+  security:
+    enabled: false

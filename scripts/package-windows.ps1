@@ -21,8 +21,10 @@ if($LASTEXITCODE -ne 0) { throw 'Creazione runtime fallita.' }
 $vswhere=Join-Path ${env:ProgramFiles(x86)} 'Microsoft Visual Studio\Installer\vswhere.exe'
 if(-not (Test-Path -LiteralPath $vswhere)) { throw 'Sul builder servono i runtime redistribuibili Visual Studio 2022 x64.' }
 $vs=& $vswhere -latest -products '*' -property installationPath
-$redist=Get-ChildItem (Join-Path $vs 'VC\Redist\MSVC') -Directory | Sort-Object { [Version]$_.Name } -Descending | Select-Object -First 1
-$crt=Get-ChildItem (Join-Path $redist.FullName 'x64') -Directory | Where-Object Name -Match '^Microsoft\.VC\d+\.CRT$' | Select-Object -First 1
+$crt=Get-ChildItem (Join-Path $vs 'VC\Redist\MSVC') -Directory | ForEach-Object {
+    $x64=Join-Path $_.FullName 'x64'
+    if(Test-Path -LiteralPath $x64) { Get-ChildItem $x64 -Directory | Where-Object Name -Match '^Microsoft\.VC\d+\.CRT$' }
+} | Sort-Object FullName -Descending | Select-Object -First 1
 if($null -eq $crt) { throw 'DLL runtime MSVC x64 non trovate nel builder.' }
 Get-ChildItem $crt.FullName -Filter '*.dll' | Copy-Item -Destination (Join-Path $package 'runtime\bin')
 $archive=Join-Path $OutputRoot "mysql-$MysqlVersion-winx64.zip"

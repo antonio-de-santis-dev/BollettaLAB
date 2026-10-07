@@ -1,0 +1,28 @@
+server:
+  port: ${SERVER_PORT:8080}
+spring:
+  application:
+    name: luce-business
+  datasource:
+    url: ${DB_URL:jdbc:mysql://mysql:3306/luce_business}
+    username: ${DB_USER:luce_business}
+    password: ${DB_PASSWORD}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+platform:
+  service: luce-business
+  simulator: true
+  internal-key: ${INTERNAL_KEY}
+  users-url: ${USERS_URL:http://utenti:8080}
+  payment-url: ${PAYMENT_URL:http://pagamento:8080}
+fonti:
+  automatico: false
+business:
+  admin-token: ''
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health

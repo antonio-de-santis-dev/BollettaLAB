@@ -2,6 +2,13 @@ package it.bollettalab.platform;
 
 public class HttpProblem extends RuntimeException {
   private final int status;
-  public HttpProblem(int status, String message) { super(message); this.status = status; }
-  public int status() { return status; }
+
+  public HttpProblem(int status, String message) {
+    super(message);
+    this.status = status;
+  }
+
+  public int status() {
+    return status;
+  }
 }

@@ -1,0 +1,17 @@
+server:
+  port: ${SERVER_PORT:8080}
+spring:
+  application:
+    name: pagamento
+  datasource:
+    url: ${DB_URL:jdbc:mysql://mysql:3306/pagamento}
+    username: ${DB_USER:pagamento}
+    password: ${DB_PASSWORD}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: none
+platform:
+  service: pagamento
+  internal-key: ${INTERNAL_KEY}
+  users-url: ${USERS_URL:http://utenti:8080}

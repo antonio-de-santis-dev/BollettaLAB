@@ -17,6 +17,7 @@ import {
   downloadPdf,
   errorePdf,
   leggiLogo,
+  normalizzaPdf,
   stiliPdf,
   decodificaAnteprima,
   type PdfAnteprima,
@@ -31,10 +32,10 @@ export default function PdfEditor({
   onSave: (options: PdfOptions) => Promise<PdfOptions>;
 }) {
   const [options, setOptions] = useState<PdfOptions>(() =>
-    structuredClone(initialOptions),
+    normalizzaPdf(initialOptions),
   );
-  const [savedSettings, setSavedSettings] = useState(
-    JSON.stringify(initialOptions),
+  const [savedSettings, setSavedSettings] = useState(() =>
+    JSON.stringify(normalizzaPdf(initialOptions)),
   );
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState("");
@@ -119,7 +120,7 @@ export default function PdfEditor({
     setNotice("");
     try {
       const saved = await onSave(structuredClone(options));
-      setSavedSettings(JSON.stringify(saved));
+      setSavedSettings(JSON.stringify(normalizzaPdf(saved)));
       setNotice(
         "Impostazioni PDF salvate. I prossimi report useranno questa configurazione.",
       );

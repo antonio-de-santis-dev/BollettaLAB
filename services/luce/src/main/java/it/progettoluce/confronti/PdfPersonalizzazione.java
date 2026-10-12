@@ -10,6 +10,11 @@ public record PdfPersonalizzazione(
         String colore,
     @Size(max = 1400000, message = "Il logo deve essere inferiore a 1 MB") String logo,
     @Valid Consulente consulente) {
+  // Settings saved before the advisor block existed have no "consulente": the editor needs one.
+  public PdfPersonalizzazione {
+    if (consulente == null) consulente = new Consulente("", "", "", "", "", false);
+  }
+
   public enum Stile {
     CLASSICO,
     ESSENZIALE,

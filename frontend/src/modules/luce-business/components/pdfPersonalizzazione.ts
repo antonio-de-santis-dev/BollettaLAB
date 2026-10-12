@@ -58,6 +58,23 @@ export const defaultPdf: PdfOptions = {
     dimostrativo: true,
   },
 };
+/** Fills missing fields of settings read from the server, so the editor never sees null. */
+export function normalizzaPdf(o: Partial<PdfOptions> | null | undefined): PdfOptions {
+  const c: Partial<PdfOptions["consulente"]> = o?.consulente ?? {};
+  return {
+    stile: o?.stile ?? defaultPdf.stile,
+    colore: o?.colore ?? defaultPdf.colore,
+    logo: o?.logo ?? null,
+    consulente: {
+      nome: c.nome ?? "",
+      ruolo: c.ruolo ?? "",
+      email: c.email ?? "",
+      telefono: c.telefono ?? "",
+      indirizzo: c.indirizzo ?? "",
+      dimostrativo: c.dimostrativo ?? false,
+    },
+  };
+}
 export function downloadPdf(blob: Blob, id: number) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");

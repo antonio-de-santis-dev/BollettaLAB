@@ -118,6 +118,18 @@ describe("Editor PDF", () => {
     await userEvent.click(screen.getByRole("button", { name: "Riprova" }));
     await screen.findByText("PDF aggiornato · formato A4");
   });
+  it("apre le impostazioni salvate senza consulente invece di andare in errore", async () => {
+    vi.spyOn(api, "get").mockResolvedValue({
+      data: {
+        opzioni: { stile: "CLASSICO", colore: "#194D3D", logo: null, consulente: null },
+        versione: 0,
+      },
+    });
+    vi.spyOn(api, "post").mockResolvedValue({ data: anteprima() });
+    render(<ImpostazioniPdfPage />);
+    await screen.findByText("PDF aggiornato · formato A4");
+    expect(screen.getByRole("button", { name: "Salva impostazioni PDF" })).toBeVisible();
+  });
   it("salva solo su richiesta, ricarica dal server e mantiene la bozza se il salvataggio fallisce", async () => {
     vi.spyOn(api, "get").mockResolvedValue({
       data: { opzioni: defaultPdf, versione: 4 },

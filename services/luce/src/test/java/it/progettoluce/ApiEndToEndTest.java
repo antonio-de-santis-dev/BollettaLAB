@@ -373,6 +373,18 @@ class ApiEndToEndTest {
   }
 
   @Test
+  void impostazioniPdfPredefiniteHannoSempreIlConsulente() throws Exception {
+    mvc.perform(get("/api/impostazioni-pdf"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.opzioni.consulente").isMap());
+    var vecchie =
+        json.readValue(
+            "{\"stile\":\"CLASSICO\",\"colore\":\"#194D3D\",\"consulente\":null}",
+            it.progettoluce.confronti.PdfPersonalizzazione.class);
+    org.assertj.core.api.Assertions.assertThat(vecchie.consulente()).isNotNull();
+  }
+
+  @Test
   void salvaImpostazioniPdfELeApplicaAutomaticamenteAlDownload() throws Exception {
     var config =
         json.readTree(

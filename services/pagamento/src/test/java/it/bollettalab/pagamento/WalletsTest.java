@@ -100,4 +100,12 @@ class WalletsTest {
     assertThat(success.get()).isEqualTo(1);
     assertThat(wallets.wallet(i.workspaceId()).get("remaining")).isEqualTo(0);
   }
+
+  @Test
+  void unknownReservationIsNotFound() {
+    assertThatThrownBy(() -> wallets.complete("missing", Map.of()))
+        .isInstanceOfSatisfying(HttpProblem.class, e -> assertThat(e.status()).isEqualTo(404));
+    assertThatThrownBy(() -> wallets.release("missing"))
+        .isInstanceOfSatisfying(HttpProblem.class, e -> assertThat(e.status()).isEqualTo(404));
+  }
 }

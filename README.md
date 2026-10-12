@@ -35,7 +35,7 @@ I cinque backend e MySQL non espongono porte sull'host. Nginx serve React e inst
 - Admin: blocco/sblocco, eliminazione account, variazione quote con motivazione, reset delle password e attività recenti. Le password non sono leggibili.
 - I simulatori conservano confronto, bollette, offerte, parametri, fonti, impostazioni PDF e storico. Il modulo business conserva anche il motore avanzato e i relativi profili.
 
-**Pagamenti:** il profilo Docker predefinito `dev` usa acquisti simulati, chiaramente indicati nell'interfaccia. Non ci sono addebiti. Stripe viene configurato insieme nell'ultima fase; i checkout reali restano disattivati. Non esporre il profilo `dev` al pubblico. Vedi [docs/STRIPE.md](docs/STRIPE.md).
+**Pagamenti:** il profilo Docker predefinito `dev` usa acquisti simulati, chiaramente indicati nell'interfaccia. Non ci sono addebiti. Stripe viene configurato insieme nell'ultima fase; i checkout reali restano disattivati. Non esporre il profilo `dev` al pubblico: mostra i link di recupero password, quindi il servizio utenti si rifiuta di avviarsi in `dev` se `PUBLIC_URL` non è `localhost` o `127.0.0.1`. Vedi [docs/STRIPE.md](docs/STRIPE.md).
 
 ## Documentazione
 

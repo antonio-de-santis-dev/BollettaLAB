@@ -84,9 +84,18 @@ public class Wallets {
         dev());
   }
 
-  @Transactional
+  /** Read-only view: no row lock, so balance checks do not queue behind simulations. */
   public Map<String, Object> wallet(String w) {
-    return view(lock(w));
+    var rows = db.queryForList("SELECT * FROM wallets WHERE workspace_id=?", w);
+    if (!rows.isEmpty()) return view(rows.get(0));
+    ensure(w);
+    return view(db.queryForMap("SELECT * FROM wallets WHERE workspace_id=?", w));
+  }
+
+  Map<String, Object> reservation(String id) {
+    var rows = db.queryForList("SELECT * FROM reservations WHERE id=?", id);
+    if (rows.isEmpty()) throw new HttpProblem(404, "Operazione non trovata");
+    return rows.get(0);
   }
 
   void ledger(String w, String actor, int delta, String reason) {
@@ -217,7 +226,7 @@ public class Wallets {
 
   @Transactional
   public void complete(String id, Map<String, Object> b) {
-    var first = db.queryForMap("SELECT * FROM reservations WHERE id=?", id);
+    var first = reservation(id);
     lock(s(first, "workspace_id"));
     var r = db.queryForMap("SELECT * FROM reservations WHERE id=? FOR UPDATE", id);
     if ("COMPLETE".equals(s(r, "state"))) return;
@@ -232,7 +241,7 @@ public class Wallets {
 
   @Transactional
   public void release(String id) {
-    var first = db.queryForMap("SELECT * FROM reservations WHERE id=?", id);
+    var first = reservation(id);
     lock(s(first, "workspace_id"));
     var r = db.queryForMap("SELECT * FROM reservations WHERE id=? FOR UPDATE", id);
     if (!"RESERVED".equals(s(r, "state"))) return;

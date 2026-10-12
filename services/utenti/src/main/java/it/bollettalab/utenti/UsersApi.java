@@ -29,7 +29,8 @@ public class UsersApi {
   }
 
   @PostMapping("/api/auth/register")
-  Object register(@RequestBody Map<String, Object> b) {
+  Object register(@RequestBody Map<String, Object> b, HttpServletRequest req) {
+    accounts.throttle("register", req.getRemoteAddr(), 10);
     return accounts.register(b);
   }
 
@@ -60,19 +61,22 @@ public class UsersApi {
   }
 
   @PostMapping("/api/auth/reset-password")
-  Object reset(@RequestBody Map<String, Object> b) {
+  Object reset(@RequestBody Map<String, Object> b, HttpServletRequest req) {
+    accounts.throttle("token", req.getRemoteAddr(), 30);
     accounts.reset(b);
     return Map.of("message", "Password aggiornata. Accedi con la nuova password");
   }
 
   @PostMapping("/api/auth/verify-email")
-  Object verify(@RequestBody Map<String, Object> b) {
+  Object verify(@RequestBody Map<String, Object> b, HttpServletRequest req) {
+    accounts.throttle("token", req.getRemoteAddr(), 30);
     accounts.verify(Accounts.str(b, "token"));
     return Map.of("message", "Email verificata");
   }
 
   @PostMapping("/api/auth/accept-invite")
-  Object accept(@RequestBody Map<String, Object> b) {
+  Object accept(@RequestBody Map<String, Object> b, HttpServletRequest req) {
+    accounts.throttle("token", req.getRemoteAddr(), 30);
     accounts.accept(b);
     return Map.of("message", "Account agente attivato. Ora puoi accedere");
   }

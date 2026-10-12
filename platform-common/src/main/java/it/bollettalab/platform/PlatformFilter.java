@@ -40,8 +40,8 @@ public class PlatformFilter extends OncePerRequestFilter {
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("X-Request-Id", UUID.randomUUID().toString());
-    String path = req.getRequestURI();
     try {
+      String path = RequestPaths.of(req);
       if (!env.getProperty("platform.security.enabled", Boolean.class, true)
           || path.equals("/actuator/health")
           || path.startsWith("/actuator/health/")) {
@@ -68,7 +68,7 @@ public class PlatformFilter extends OncePerRequestFilter {
       boolean simulator =
           !Set.of("utenti", "pagamento").contains(env.getProperty("platform.service"));
       if (simulator && !identity.admin()) {
-        if (!identity.status().equals("ACTIVE"))
+        if (!"ACTIVE".equals(identity.status()))
           throw new HttpProblem(403, "Completa l’attivazione dell’account");
         if (!req.getMethod().equals("GET")) {
           var access =

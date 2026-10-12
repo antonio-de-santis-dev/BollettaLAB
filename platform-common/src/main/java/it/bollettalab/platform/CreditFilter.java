@@ -26,7 +26,7 @@ public class CreditFilter extends OncePerRequestFilter {
   @Override
   protected boolean shouldNotFilter(HttpServletRequest r) {
     return !r.getMethod().equals("POST")
-        || !Set.of("/api/confronti", "/api/business/simulazioni").contains(r.getRequestURI())
+        || !Set.of("/api/confronti", "/api/business/simulazioni").contains(RequestPaths.of(r))
         || RequestContext.identity() == null
         || RequestContext.required().admin();
   }
@@ -59,14 +59,14 @@ public class CreditFilter extends OncePerRequestFilter {
                   "simulator",
                   service,
                   "kind",
-                  req.getRequestURI().equals("/api/business/simulazioni")
+                  RequestPaths.of(req).equals("/api/business/simulazioni")
                       ? "business"
                       : "comparison",
                   "requestKey",
                   key,
                   "hash",
                   Tokens.hash(
-                      req.getRequestURI()
+                      RequestPaths.of(req)
                           + "\n"
                           + new String(bytes, java.nio.charset.StandardCharsets.UTF_8))),
               Map.class);

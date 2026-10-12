@@ -28,6 +28,42 @@ class AccountsTest {
   }
 
   @Test
+  void unknownAccountsAnswerWithHttpErrorsInsteadOfServerErrors() {
+    assertThatThrownBy(() -> accounts.account("missing"))
+        .isInstanceOfSatisfying(HttpProblem.class, e -> assertThat(e.status()).isEqualTo(404));
+    assertThatThrownBy(
+            () ->
+                accounts.login(
+                    Map.of("email", "nessuno-" + UUID.randomUUID() + "@test.it", "password", "x"),
+                    new MockHttpServletRequest(),
+                    new MockHttpServletResponse()))
+        .isInstanceOfSatisfying(HttpProblem.class, e -> assertThat(e.status()).isEqualTo(401));
+  }
+
+  @Test
+  void throttlingIsSeparatePerAction() {
+    String ip = "203.0.113." + new Random().nextInt(250);
+    for (int n = 0; n < 10; n++) accounts.throttle("register", ip, 10);
+    assertThatThrownBy(() -> accounts.throttle("register", ip, 10))
+        .isInstanceOfSatisfying(HttpProblem.class, e -> assertThat(e.status()).isEqualTo(429));
+    accounts.throttle(ip);
+  }
+
+  @Test
+  void developmentProfileOnlyOnLoopbackAddresses() {
+    assertThat(Accounts.loopback("http://localhost:8091")).isTrue();
+    assertThat(Accounts.loopback("http://127.0.0.1:8091")).isTrue();
+    assertThat(Accounts.loopback("https://bollettalab.it")).isFalse();
+    assertThat(Accounts.loopback("")).isFalse();
+    var env =
+        new org.springframework.mock.env.MockEnvironment()
+            .withProperty("platform.public-url", "https://bollettalab.it");
+    env.setActiveProfiles("dev");
+    assertThatThrownBy(() -> new Accounts(accounts.jdbc(), env, null))
+        .isInstanceOf(IllegalStateException.class);
+  }
+
+  @Test
   void registrationLoginAndBlockedSession() {
     String email = "privato-" + UUID.randomUUID() + "@test.it";
     accounts.register(

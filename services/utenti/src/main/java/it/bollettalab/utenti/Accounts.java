@@ -24,11 +24,27 @@ public class Accounts {
   final JavaMailSender mail;
   final BCryptPasswordEncoder encoder = new BCryptPasswordEncoder(12);
   final ConcurrentHashMap<String, List<Instant>> attempts = new ConcurrentHashMap<>();
+  // Compared when the email is unknown, so a failed login always costs one BCrypt check.
+  final String missingHash = encoder.encode(Tokens.create());
+  static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(Accounts.class);
 
   Accounts(JdbcTemplate db, Environment env, JavaMailSender mail) {
     this.db = db;
     this.env = env;
     this.mail = mail;
+    if (env.matchesProfiles("dev") && !loopback(env.getProperty("platform.public-url", "")))
+      throw new IllegalStateException(
+          "Il profilo dev mostra i link di recupero password: usalo solo con PUBLIC_URL su"
+              + " localhost o 127.0.0.1");
+  }
+
+  static boolean loopback(String url) {
+    try {
+      String host = java.net.URI.create(url).getHost();
+      return host != null && Set.of("localhost", "127.0.0.1", "[::1]", "::1").contains(host);
+    } catch (IllegalArgumentException e) {
+      return false;
+    }
   }
 
   boolean dev() {
@@ -79,11 +95,14 @@ public class Accounts {
   }
 
   Map<String, Object> account(String id) {
-    return db.queryForMap(
-        "SELECT a.*,w.status workspace_status,w.name company_name,w.vat_number,w.address,w.type"
-            + " workspace_type FROM accounts a JOIN workspaces w ON w.id=a.workspace_id WHERE"
-            + " a.id=?",
-        id);
+    var rows =
+        db.queryForList(
+            "SELECT a.*,w.status workspace_status,w.name company_name,w.vat_number,w.address,w.type"
+                + " workspace_type FROM accounts a JOIN workspaces w ON w.id=a.workspace_id WHERE"
+                + " a.id=?",
+            id);
+    if (rows.isEmpty()) throw new HttpProblem(404, "Account non trovato");
+    return rows.get(0);
   }
 
   Identity identity(Map<String, Object> m) {
@@ -138,15 +157,22 @@ public class Accounts {
   }
 
   void throttle(String ip) {
+    throttle("auth", ip, 15);
+  }
+
+  /** At most {@code max} attempts per action and IP address in 15 minutes. */
+  void throttle(String action, String ip, int max) {
     Instant now = Instant.now();
     attempts
         .entrySet()
         .removeIf(e -> e.getValue().stream().allMatch(t -> t.isBefore(now.minusSeconds(900))));
     List<Instant> times =
-        attempts.computeIfAbsent(ip, k -> Collections.synchronizedList(new ArrayList<>()));
+        attempts.computeIfAbsent(
+            action + ":" + ip, k -> Collections.synchronizedList(new ArrayList<>()));
     synchronized (times) {
       times.removeIf(t -> t.isBefore(now.minusSeconds(900)));
-      if (times.size() >= 15) throw new HttpProblem(429, "Troppi tentativi. Riprova tra 15 minuti");
+      if (times.size() >= max)
+        throw new HttpProblem(429, "Troppi tentativi. Riprova tra 15 minuti");
       times.add(now);
     }
   }
@@ -157,7 +183,8 @@ public class Accounts {
     throttle(request.getRemoteAddr());
     String em = email(str(body, "email"));
     var rows = db.queryForList("SELECT id,password_hash,status FROM accounts WHERE email=?", em);
-    if (rows.isEmpty() || !encoder.matches(secret(body), str(rows.get(0), "password_hash")))
+    String hash = rows.isEmpty() ? missingHash : str(rows.get(0), "password_hash");
+    if (!encoder.matches(secret(body), hash) || rows.isEmpty())
       throw new HttpProblem(401, "Email o password errate");
     var m = account(str(rows.get(0), "id"));
     if ("BLOCKED".equals(str(m, "status"))
@@ -205,16 +232,20 @@ public class Accounts {
         type.equals("COMPANY") ? company : name,
         vat,
         address);
-    db.update(
-        "INSERT INTO accounts(id,workspace_id,email,name,role,password_hash,status,verified)"
-            + " VALUES(?,?,?,?,?,?,'ACTIVE',?)",
-        user,
-        workspace,
-        em,
-        name,
-        type.equals("COMPANY") ? "OWNER" : "PRIVATE",
-        encoder.encode(pw),
-        dev());
+    try {
+      db.update(
+          "INSERT INTO accounts(id,workspace_id,email,name,role,password_hash,status,verified)"
+              + " VALUES(?,?,?,?,?,?,'ACTIVE',?)",
+          user,
+          workspace,
+          em,
+          name,
+          type.equals("COMPANY") ? "OWNER" : "PRIVATE",
+          encoder.encode(pw),
+          dev());
+    } catch (org.springframework.dao.DuplicateKeyException e) {
+      throw new HttpProblem(409, "Email già registrata");
+    }
     String link = issue("VERIFY", user, workspace, em, name);
     audit("REGISTER", user);
     return dev()
@@ -285,7 +316,14 @@ public class Accounts {
     String link = "";
     if (!rows.isEmpty()) {
       var u = rows.get(0);
-      link = issue("RESET", str(u, "id"), str(u, "workspace_id"), str(u, "email"), str(u, "name"));
+      try {
+        link =
+            issue("RESET", str(u, "id"), str(u, "workspace_id"), str(u, "email"), str(u, "name"));
+      } catch (org.springframework.mail.MailException e) {
+        // Same answer as for an unknown email: a mail failure must not reveal the account.
+        log.warn("Invio email di recupero non riuscito", e);
+        link = "";
+      }
     }
     return dev() && !link.isBlank()
         ? Map.of("message", "Usa il link di prova per reimpostare la password", "resetUrl", link)
@@ -350,14 +388,18 @@ public class Accounts {
         db.queryForMap(
             "SELECT status FROM workspaces WHERE id=? FOR UPDATE", str(t, "workspace_id"));
     if (!"ACTIVE".equals(str(w, "status"))) throw new HttpProblem(403, "L'impresa non è attiva");
-    db.update(
-        "INSERT INTO accounts(id,workspace_id,email,name,role,password_hash,status,verified)"
-            + " VALUES(?,?,?,?,'AGENT',?,'ACTIVE',TRUE)",
-        id(),
-        str(t, "workspace_id"),
-        str(t, "email"),
-        str(t, "name"),
-        encoder.encode(pw));
+    try {
+      db.update(
+          "INSERT INTO accounts(id,workspace_id,email,name,role,password_hash,status,verified)"
+              + " VALUES(?,?,?,?,'AGENT',?,'ACTIVE',TRUE)",
+          id(),
+          str(t, "workspace_id"),
+          str(t, "email"),
+          str(t, "name"),
+          encoder.encode(pw));
+    } catch (org.springframework.dao.DuplicateKeyException e) {
+      throw new HttpProblem(409, "Email già registrata");
+    }
   }
 
   @Transactional

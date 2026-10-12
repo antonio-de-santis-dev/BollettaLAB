@@ -4,4 +4,11 @@
   <groupId>it.bollettalab</groupId><artifactId>bollettalab</artifactId><version>1.0.0</version><packaging>pom</packaging>
   <properties><java.version>17</java.version><project.build.sourceEncoding>UTF-8</project.build.sourceEncoding></properties>
   <modules><module>platform-common</module><module>services/utenti</module><module>services/pagamento</module><module>services/luce</module><module>services/luce-business</module><module>services/gas</module></modules>
+  <build>
+    <plugins>
+      <!-- Loads Mockito's agent at JVM start instead of attaching it at runtime (JDK 21+ warning). -->
+      <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-dependency-plugin</artifactId><executions><execution><goals><goal>properties</goal></goals></execution></executions></plugin>
+      <plugin><groupId>org.apache.maven.plugins</groupId><artifactId>maven-surefire-plugin</artifactId><configuration><argLine>-javaagent:${org.mockito:mockito-core:jar} -Xshare:off</argLine></configuration></plugin>
+    </plugins>
+  </build>
 </project>

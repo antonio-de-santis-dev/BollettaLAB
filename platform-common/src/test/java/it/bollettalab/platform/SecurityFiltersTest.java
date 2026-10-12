@@ -60,6 +60,43 @@ class SecurityFiltersTest {
   }
 
   @Test
+  void pathVariantsCannotSkipAdminSourcesOrCreditChecks() throws Exception {
+    var env = new MockEnvironment().withProperty("platform.service", "luce");
+    var client = mock(InternalClient.class);
+    when(client.get(anyString(), eq(Map.class))).thenReturn(Map.of("active", true));
+    var filter = new PlatformFilter(r -> privateUser(), client, env);
+    for (String path :
+        List.of(
+            "/api/confronti;x",
+            "/api/fonti;x/dati",
+            "/api/%2561dmin/users",
+            "/api//admin/users",
+            "/api/x/../admin/users")) {
+      var request = new MockHttpServletRequest("PUT", path);
+      request.addHeader("X-Requested-With", "BollettaLAB");
+      var chain = new MockFilterChain();
+      var response = new MockHttpServletResponse();
+      filter.doFilter(request, response, chain);
+      assertThat(response.getStatus()).as(path).isEqualTo(400);
+      assertThat(chain.getRequest()).as(path).isNull();
+    }
+    for (String path : List.of("/api/fonti/dati", "/api/%66onti/dati", "/api/%61dmin/users")) {
+      var request = new MockHttpServletRequest("PUT", path);
+      request.addHeader("X-Requested-With", "BollettaLAB");
+      var chain = new MockFilterChain();
+      var response = new MockHttpServletResponse();
+      filter.doFilter(request, response, chain);
+      assertThat(response.getStatus()).as(path).isEqualTo(403);
+      assertThat(chain.getRequest()).as(path).isNull();
+    }
+    RequestContext.set(privateUser());
+    var credits =
+        new CreditFilter(client, mock(LocalReceipts.class), env, new ObjectMapper());
+    var encoded = new MockHttpServletRequest("POST", "/api/%63onfronti");
+    assertThat(credits.shouldNotFilter(encoded)).isFalse();
+  }
+
+  @Test
   void cachedOperationKeepsUtf8AndCreationStatus() throws Exception {
     RequestContext.set(privateUser());
     var client = mock(InternalClient.class);

@@ -527,6 +527,10 @@ public class Accounts {
     }
     if (emailChanged) {
       db.update("UPDATE accounts SET verified=FALSE WHERE id=?", actor.id());
+      // Links sent to the previous address must not verify or reset the new one.
+      db.update(
+          "DELETE FROM account_tokens WHERE user_id=? AND purpose IN ('VERIFY','RESET')",
+          actor.id());
       String link = issue("VERIFY", actor.id(), actor.workspaceId(), em, name);
       audit("UPDATE_PROFILE", actor.id());
       var result = new HashMap<String, Object>();
@@ -600,7 +604,10 @@ public class Accounts {
       if (em.isBlank() || pw.isBlank()) return;
       password(pw);
       em = email(em);
-      if (!db.queryForList("SELECT id FROM accounts WHERE email=?", em).isEmpty()) return;
+      // Once an administrator exists, the configured initial credentials are not applied again:
+      // otherwise an email changed from the profile page would resurrect the initial account.
+      if (!db.queryForList("SELECT id FROM accounts WHERE email=? OR role='ADMIN'", em).isEmpty())
+        return;
       String w = id(), u = id();
       db.update(
           "INSERT INTO workspaces(id,type,name,status)"

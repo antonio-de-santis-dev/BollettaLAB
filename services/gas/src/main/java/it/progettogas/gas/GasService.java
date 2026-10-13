@@ -144,7 +144,7 @@ public class GasService {
       var p = read(kind, id, Profile.class);
       data =
           new Profile(
-              p.name() + " · nuova versione",
+              copyName(p.name(), " · nuova versione"),
               p.provider(),
               p.area(),
               p.validFrom(),
@@ -161,11 +161,16 @@ public class GasService {
       @SuppressWarnings("unchecked")
       Map<String, Object> copy = mapper.convertValue(data, Map.class);
       String key = kind.equals("offerte") ? "name" : "client";
-      String name = Objects.toString(copy.get(key), "");
-      copy.put(key, name.substring(0, Math.min(180, name.length())) + " · copia");
+      copy.put(key, copyName(Objects.toString(copy.get(key), ""), " · copia"));
       data = copy;
     }
     return save(kind, null, data, null);
+  }
+
+  /** Names are limited to 150 characters: the suffix replaces the end of a long name. */
+  static String copyName(String name, String suffix) {
+    int keep = Math.min(name.length(), 150 - suffix.length());
+    return name.substring(0, keep).stripTrailing() + suffix;
   }
 
   public Comparison calculate(Calculate req) {

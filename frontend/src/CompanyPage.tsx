@@ -39,12 +39,13 @@ export default function CompanyPage() {
     task.setNotice(r.data.message);
     await load();
   }
+  const occupied = data.agents.length + data.invites.length;
   return (
     <main className="lab-page">
       <p className="lab-eyebrow">GESTIONE IMPRESA</p>
       <h1>Il tuo gruppo di lavoro.</h1>
       <p>
-        {data.agents.length + data.invites.length} posti occupati su{" "}
+        {occupied} {occupied === 1 ? "posto occupato" : "posti occupati"} su{" "}
         {wallet?.agentSeats ?? 2}. Gli agenti creati possono accedere subito; le
         simulazioni sono condivise con il titolare.
       </p>

@@ -12,7 +12,7 @@ cd BollettaLAB
 ./scripts/start.sh
 ```
 
-Apri **http://localhost:8091**. Lo script genera automaticamente `.env` con password casuali e chiave interna: non occorre inventare un token amministratore. Le credenziali dell'amministratore sono nelle voci `ADMIN_EMAIL` e `ADMIN_PASSWORD` del file `.env`. La porta si cambia con `WEB_PORT`; aggiorna anche `PUBLIC_URL`.
+Apri **http://localhost:8091**. Lo script genera automaticamente `.env` con password casuali e chiave interna: non occorre inventare un token amministratore. Le credenziali dell'amministratore sono nelle voci `ADMIN_EMAIL` e `ADMIN_PASSWORD` del file `.env`. Sono le credenziali **iniziali**: vengono applicate solo finché non esiste un amministratore; se l'amministratore cambia email o password dal profilo, valgono quelle nuove anche dopo un riavvio. La porta si cambia con `WEB_PORT`; aggiorna anche `PUBLIC_URL`.
 
 Dopo il primo avvio:
 

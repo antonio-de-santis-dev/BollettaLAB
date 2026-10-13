@@ -7,9 +7,46 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.net.InetSocketAddress;
 import java.util.*;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.springframework.jdbc.core.JdbcTemplate;
 
 class ActivityOutboxTest {
+  @Test
+  void overLongValuesAreCutAndUnreadableRowsDoNotBlockLaterEvents() throws Exception {
+    var db = mock(JdbcTemplate.class);
+    var json = new ObjectMapper();
+    var event =
+        new ActivityEvent(
+            null,
+            null,
+            null,
+            "",
+            "Consultazione",
+            "HTTP 401",
+            "WARNING",
+            "luce",
+            null,
+            "GET",
+            "/api/" + "a".repeat(400),
+            401);
+    var outbox = new ActivityOutbox(db, json, "http://127.0.0.1:1", "internal-test");
+    outbox.record(event);
+    var stored = ArgumentCaptor.forClass(String.class);
+    verify(db)
+        .update(
+            eq("INSERT INTO activity_outbox(id,payload) VALUES(?,?)"), any(), stored.capture());
+    assertThat(json.readValue(stored.getValue(), ActivityEvent.class).route()).hasSize(300);
+
+    when(db.queryForList(anyString()))
+        .thenReturn(
+            List.of(
+                Map.of("id", "broken", "payload", "{not json"),
+                Map.of("id", event.eventId(), "payload", stored.getValue())));
+    outbox.deliver();
+    verify(db).update("DELETE FROM activity_outbox WHERE id=?", "broken");
+    verify(db, never()).update("DELETE FROM activity_outbox WHERE id=?", event.eventId());
+  }
+
   @Test
   void failedDeliveryRetainsPersistentEventsAndSuccessfulDeliveryAcknowledgesThem()
       throws Exception {

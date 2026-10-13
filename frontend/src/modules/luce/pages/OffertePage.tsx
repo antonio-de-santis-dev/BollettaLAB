@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Plus, Pencil, Trash2, Search, CheckCircle2 } from "lucide-react";
 import { api, messaggioErrore, useLista } from "../api";
+import { copyName } from "../../../copyName";
 import {
   euro,
   fasce,
@@ -280,7 +281,7 @@ export default function OffertePage() {
                     <td>
                       <div className="row-actions">
                         <button className="button secondary compact" onClick={() => {
-                          setEdit({ ...structuredClone(o), id: undefined, nomeOfferta: (o.nomeOfferta + " · copia").slice(0, 150) });
+                          setEdit({ ...structuredClone(o), id: undefined, nomeOfferta: copyName(o.nomeOfferta) });
                           setNotice("Copia dell’offerta preparata: verifica il nome e salva per crearla. L’originale resta disponibile.");
                         }}>Duplica</button>
                         <button

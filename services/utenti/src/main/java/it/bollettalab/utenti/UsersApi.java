@@ -217,8 +217,19 @@ public class UsersApi {
   Object activities(@RequestBody List<ActivityEvent> events) {
     if (events.isEmpty() || events.size() > 100)
       throw new HttpProblem(400, "Dimensione batch non valida");
-    events.forEach(activities::record);
-    return Map.of("recorded", true);
+    // An invalid event stays invalid on every retry: reject it alone instead of the whole batch.
+    // Database failures still propagate, so the sender keeps the batch and retries.
+    int rejected = 0;
+    for (var event : events)
+      try {
+        activities.record(event);
+      } catch (HttpProblem invalid) {
+        rejected++;
+      }
+    if (rejected > 0)
+      org.slf4j.LoggerFactory.getLogger(getClass())
+          .warn("Activity batch: {} invalid events discarded", rejected);
+    return Map.of("recorded", events.size() - rejected, "rejected", rejected);
   }
 
   @PostMapping("/internal/audit")

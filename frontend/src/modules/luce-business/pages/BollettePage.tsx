@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from "react";
 import { Plus, Pencil, Trash2, FileText } from "lucide-react";
 import { api, messaggioErrore, useLista } from "../api";
+import { copyName } from "../../../copyName";
 import {
   euro,
   numero,
@@ -342,7 +343,7 @@ export default function BollettePage() {
                     <td>
                       <div className="row-actions">
                         <button className="button secondary compact" onClick={() => {
-                          setEdit({ dati: { ...structuredClone(b.dati), cliente: (b.dati.cliente + " · copia").slice(0, 150) } });
+                          setEdit({ dati: { ...structuredClone(b.dati), cliente: copyName(b.dati.cliente) } });
                           setNotice("Copia della bolletta preparata: verifica cliente e periodo, poi salva per crearla.");
                         }}>Duplica</button>
                         <button

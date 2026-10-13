@@ -83,6 +83,12 @@ class GasApiTest {
         mvc.perform(get("/api/confronti/" + id + "/pdf"))
             .andExpect(status().isOk())
             .andExpect(content().contentType(MediaType.APPLICATION_PDF))
+            .andExpect(
+                header()
+                    .string(
+                        "Content-Disposition",
+                        org.hamcrest.Matchers.matchesPattern(
+                            "attachment; filename=\"[A-Za-z0-9-]+-ProgettoGas-\\d{4}-\\d{2}-\\d{2}\\.pdf\"")))
             .andReturn()
             .getResponse()
             .getContentAsByteArray();
@@ -142,5 +148,42 @@ class GasApiTest {
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(mapper.writeValueAsString(java.util.Map.of("data", b))))
         .andExpect(status().isBadRequest());
+  }
+
+  @Test
+  void duplicatesOfMaximumLengthNamesStayValid() throws Exception {
+    var e = load();
+    String longest = "N".repeat(150);
+    for (var section : java.util.List.of("offerte", "bollette", "parametri")) {
+      var source =
+          switch (section) {
+            case "offerte" -> e.path("offer");
+            case "bollette" -> e.path("bill");
+            default -> e.path("profiles").get(1);
+          };
+      var data = (ObjectNode) source.path("data");
+      data.put(section.equals("bollette") ? "client" : "name", longest);
+      long id = source.path("id").asLong();
+      mvc.perform(
+              put("/api/" + section + "/" + id)
+                  .contentType(MediaType.APPLICATION_JSON)
+                  .content(
+                      mapper.writeValueAsString(
+                          java.util.Map.of("data", data, "version", source.path("version")))))
+          .andExpect(status().isOk());
+      var copy =
+          mapper.readTree(
+              mvc.perform(post("/api/" + section + "/" + id + "/duplica"))
+                  .andExpect(status().isCreated())
+                  .andReturn()
+                  .getResponse()
+                  .getContentAsString());
+      String name =
+          copy.path("data").path(section.equals("bollette") ? "client" : "name").asText();
+      assertThat(name)
+          .hasSize(150)
+          .endsWith(section.equals("parametri") ? "nuova versione" : "copia");
+      assertThat(copy.path("id").asLong()).isNotEqualTo(id);
+    }
   }
 }

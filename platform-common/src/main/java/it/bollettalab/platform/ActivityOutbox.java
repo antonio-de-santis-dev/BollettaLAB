@@ -33,7 +33,7 @@ public class ActivityOutbox implements ActivitySink {
       db.update(
           "INSERT INTO activity_outbox(id,payload) VALUES(?,?)",
           e.eventId(),
-          json.writeValueAsString(e));
+          json.writeValueAsString(e.bounded()));
     } catch (com.fasterxml.jackson.core.JsonProcessingException ex) {
       throw new IllegalStateException("Evento attività non serializzabile", ex);
     }
@@ -44,15 +44,25 @@ public class ActivityOutbox implements ActivitySink {
     var rows =
         db.queryForList("SELECT id,payload FROM activity_outbox ORDER BY created_at,id LIMIT 100");
     if (rows.isEmpty()) return;
+    var events = new ArrayList<ActivityEvent>();
+    var ids = new ArrayList<Object>();
+    for (var row : rows)
+      try {
+        events.add(json.readValue(row.get("payload").toString(), ActivityEvent.class).bounded());
+        ids.add(row.get("id"));
+      } catch (com.fasterxml.jackson.core.JsonProcessingException unreadable) {
+        // It can never be delivered; keeping it would block every later event.
+        LoggerFactory.getLogger(getClass())
+            .error("Activity event {} unreadable: discarded", row.get("id"));
+        db.update("DELETE FROM activity_outbox WHERE id=?", row.get("id"));
+      }
+    if (events.isEmpty()) return;
     try {
-      var events = new ArrayList<ActivityEvent>();
-      for (var row : rows)
-        events.add(json.readValue(row.get("payload").toString(), ActivityEvent.class));
       client.post().uri(url).body(events).retrieve().toBodilessEntity();
-      for (var row : rows) db.update("DELETE FROM activity_outbox WHERE id=?", row.get("id"));
-    } catch (Exception e) {
+      for (var id : ids) db.update("DELETE FROM activity_outbox WHERE id=?", id);
+    } catch (org.springframework.web.client.RestClientException e) {
       LoggerFactory.getLogger(getClass())
-          .warn("Activity delivery pending: {} events retained locally", rows.size());
+          .warn("Activity delivery pending: {} events retained locally", events.size());
     }
   }
 }

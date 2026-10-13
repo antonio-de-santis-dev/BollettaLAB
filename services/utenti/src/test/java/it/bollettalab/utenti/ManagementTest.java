@@ -22,6 +22,7 @@ import org.springframework.test.context.ActiveProfiles;
 class ManagementTest {
   @Autowired Accounts accounts;
   @Autowired Activities activities;
+  @Autowired UsersApi api;
 
   @AfterEach
   void clear() {
@@ -159,6 +160,34 @@ class ManagementTest {
   }
 
   @Test
+  void verificationLinkOfThePreviousEmailCannotVerifyTheNewOne() {
+    String email = "private-" + UUID.randomUUID() + "@test.it";
+    var registered =
+        accounts.register(
+            Map.of(
+                "email", email, "password", "Password123!", "name", "Privato", "type", "PRIVATE"));
+    String oldLink = registered.get("verificationUrl").toString();
+    var user =
+        accounts.login(
+            Map.of("email", email, "password", "Password123!"),
+            new MockHttpServletRequest(),
+            new MockHttpServletResponse());
+    RequestContext.set(user);
+    var form = new HashMap<String, Object>(accounts.profile());
+    form.put("email", "new-" + email);
+    form.put("currentPassword", "Password123!");
+    accounts.updateProfile(form);
+    assertThatThrownBy(() -> accounts.verify(oldLink.split("token=")[1]))
+        .isInstanceOfSatisfying(HttpProblem.class, e -> assertThat(e.status()).isEqualTo(400));
+    assertThat(
+            accounts
+                .jdbc()
+                .queryForObject(
+                    "SELECT verified FROM accounts WHERE id=?", Boolean.class, user.id()))
+        .isFalse();
+  }
+
+  @Test
   void activityDeliveryIsIdempotent() {
     var event =
         new ActivityEvent(
@@ -181,6 +210,52 @@ class ManagementTest {
                 .jdbc()
                 .queryForObject(
                     "SELECT COUNT(*) FROM audit_log WHERE id=?", Integer.class, event.eventId()))
+        .isEqualTo(1);
+  }
+
+  @Test
+  void batchWithOverLongOrInvalidEventsDoesNotBlockTheQueue() {
+    var unmatchedPath =
+        new ActivityEvent(
+            null,
+            null,
+            null,
+            "",
+            "Consultazione · operazione account",
+            "Consultazione · luce · HTTP 401",
+            "WARNING",
+            "luce",
+            null,
+            "GET",
+            "/api/" + "a".repeat(400),
+            401);
+    var invalid =
+        new ActivityEvent(
+            null, null, null, "", "Test", "Stato sconosciuto", "DONE",
+            "gas", null, "GET", "/", 200);
+    var valid =
+        new ActivityEvent(
+            null, null, null, "", "Test", "Evento valido", "COMPLETED",
+            "gas", null, "GET", "/", 200);
+    @SuppressWarnings("unchecked")
+    var answer = (Map<String, Object>) api.activities(List.of(unmatchedPath, invalid, valid));
+    assertThat(answer).containsEntry("recorded", 2).containsEntry("rejected", 1);
+    assertThat(
+            accounts
+                .jdbc()
+                .queryForObject(
+                    "SELECT LENGTH(route) FROM audit_log WHERE id=?",
+                    Integer.class,
+                    unmatchedPath.eventId()))
+        .isEqualTo(300);
+    assertThat(
+            accounts
+                .jdbc()
+                .queryForObject(
+                    "SELECT COUNT(*) FROM audit_log WHERE id IN (?,?)",
+                    Integer.class,
+                    valid.eventId(),
+                    invalid.eventId()))
         .isEqualTo(1);
   }
 

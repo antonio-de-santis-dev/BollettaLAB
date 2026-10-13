@@ -16,15 +16,15 @@ public class Activities implements ActivitySink {
     this.db = db;
   }
 
-  public void record(ActivityEvent e) {
-    if (e == null
-        || e.action() == null
-        || e.action().length() > 120
-        || e.description() == null
-        || e.description().length() > 500
-        || e.status() == null
-        || !Set.of("COMPLETED", "WARNING", "ERROR").contains(e.status()))
+  public void record(ActivityEvent event) {
+    if (event == null
+        || event.action() == null
+        || event.description() == null
+        || event.status() == null
+        || !Set.of("COMPLETED", "WARNING", "ERROR").contains(event.status()))
       throw new HttpProblem(400, "Evento attività non valido");
+    // Events queued by an older sender may still carry over-long values: store them cut.
+    ActivityEvent e = event.bounded();
     if (e.eventId() == null || !e.eventId().matches("[a-fA-F0-9-]{36}"))
       throw new HttpProblem(400, "Identificativo evento non valido");
     try {
@@ -37,7 +37,7 @@ public class Activities implements ActivitySink {
           e.actorId(),
           e.actorName(),
           e.actorEmail(),
-          e.action().substring(0, Math.min(60, e.action().length())),
+          e.action(),
           e.description(),
           e.status(),
           e.service(),

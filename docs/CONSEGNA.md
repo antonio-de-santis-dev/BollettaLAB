@@ -27,6 +27,8 @@ Le 80 simulazioni scadono alla fine del periodo mensile: la nuova assegnazione r
 
 Prima di esporre l'app pubblicamente: ambiente senza provider di prova, Stripe e webhook verificati, HTTPS con cookie Secure, SMTP per verifica/inviti/reset, backup, condizioni d'uso/privacy e politica di conservazione. I log operativi completi sono disponibili in Docker; il pannello admin mostra attività degli account e movimenti delle quote.
 
+Registro attività: senza politica di conservazione cresce indefinitamente. Misura su 500.000 righe sintetiche (MySQL 8.4 in Docker, mediana di 5 richieste): prima pagina 0,15 s, filtro stato/servizio/data 0,04–0,38 s, ricerca testuale `%testo%` 2–5,7 s, pagina 1000 2,5 s. Gli indici non aiutano la ricerca testuale: oltre qualche centinaio di migliaia di righe servono una retention concordata o un indice FULLTEXT. Le richieste anonime rifiutate (401) sono registrate senza limite di frequenza lato nginx: valutare `limit_req` prima dell'esposizione pubblica.
+
 Le migrazioni sono per una nuova installazione MySQL. I database PostgreSQL precedenti non sono stati forniti e non sono stati importati: la migrazione dei dati reali richiede una lavorazione controllata distinta. Non sono inclusi dati o credenziali reali.
 
 ## Aggiunta Windows portabile

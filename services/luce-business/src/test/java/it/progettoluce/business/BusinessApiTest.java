@@ -119,6 +119,12 @@ class BusinessApiTest {
         mvc.perform(get("/api/business/simulazioni/" + sid + "/pdf"))
             .andExpect(status().isOk())
             .andExpect(header().string("Cache-Control", "no-store"))
+            .andExpect(
+                header()
+                    .string(
+                        "Content-Disposition",
+                        org.hamcrest.Matchers.matchesPattern(
+                            "attachment; filename=\"[A-Za-z0-9-]+-ProgettoLuceBusiness-\\d{4}-\\d{2}-\\d{2}\\.pdf\"")))
             .andReturn()
             .getResponse()
             .getContentAsByteArray();

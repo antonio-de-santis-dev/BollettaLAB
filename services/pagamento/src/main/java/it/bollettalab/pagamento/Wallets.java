@@ -12,6 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class Wallets {
+  @org.springframework.beans.factory.annotation.Autowired(required = false)
+  private ActivitySink activities;
+
   final JdbcTemplate db;
   final Environment env;
   final InternalClient client;
@@ -106,6 +109,43 @@ public class Wallets {
         actor,
         delta,
         reason);
+    if (activities != null) {
+      Identity identity = RequestContext.identity();
+      var event =
+          new ActivityEvent(
+              w,
+              actor,
+              identity == null ? null : identity.name(),
+              identity == null ? null : identity.email(),
+              delta < 0 ? "Consumo crediti" : "Variazione crediti",
+              "Variazione " + delta + " simulazioni · " + reason,
+              "COMPLETED",
+              "pagamento",
+              null,
+              "DOMAIN",
+              "credit_ledger",
+              200);
+      if (org.springframework.transaction.support.TransactionSynchronizationManager
+          .isSynchronizationActive())
+        org.springframework.transaction.support.TransactionSynchronizationManager
+            .registerSynchronization(
+                new org.springframework.transaction.support.TransactionSynchronization() {
+                  @Override
+                  public void afterCommit() {
+                    publishActivity(event);
+                  }
+                });
+      else publishActivity(event);
+    }
+  }
+
+  private void publishActivity(ActivityEvent event) {
+    try {
+      activities.record(event);
+    } catch (RuntimeException e) {
+      org.slf4j.LoggerFactory.getLogger(getClass())
+          .warn("Credit activity recording failed: eventId={}", event.eventId());
+    }
   }
 
   @Transactional

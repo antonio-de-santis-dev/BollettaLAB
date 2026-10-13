@@ -1,9 +1,10 @@
+import { pdfFilename, savePdf } from "../../../pdfDownload";
 import { useState } from "react";
 import { Download, LoaderCircle, SlidersHorizontal } from "lucide-react";
 import { api } from "../api";
 import { Errore } from "./ui";
 import { Link } from "react-router-dom";
-import { downloadPdf, errorePdf, verificaPdf } from "./pdfPersonalizzazione";
+import { errorePdf, verificaPdf } from "./pdfPersonalizzazione";
 
 export default function ScaricaPdf({ id }: { id: number }) {
   const [busy, setBusy] = useState(false);
@@ -14,11 +15,11 @@ export default function ScaricaPdf({ id }: { id: number }) {
     setError("");
     setNotice("");
     try {
-      const { data } = await api.get<Blob>(`/confronti/${id}/pdf`, {
+      const { data, headers } = await api.get<Blob>(`/confronti/${id}/pdf`, {
         responseType: "blob",
       });
       verificaPdf(data);
-      downloadPdf(data, id);
+      savePdf(data, pdfFilename(headers["content-disposition"]));
       setNotice("Download PDF avviato.");
     } catch (e) {
       setError(await errorePdf(e));

@@ -39,7 +39,7 @@ describe("Editor PDF", () => {
     const click = vi
       .spyOn(HTMLAnchorElement.prototype, "click")
       .mockImplementation(function (this: HTMLAnchorElement) {
-        expect(this.download).toBe("confronto-0.pdf");
+        expect(this.download).toBe("Anteprima-ProgettoLuce.pdf");
       });
     const view = render(
       <PdfEditor initialOptions={defaultPdf} onSave={vi.fn(async (o) => o)} />,

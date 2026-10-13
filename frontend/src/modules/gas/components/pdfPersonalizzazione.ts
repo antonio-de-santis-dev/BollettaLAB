@@ -79,7 +79,7 @@ export function downloadPdf(blob: Blob, id: number) {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `confronto-${id}.pdf`;
+  link.download = id === 0 ? "Anteprima-ProgettoGas.pdf" : `confronto-${id}.pdf`;
   document.body.appendChild(link);
   link.click();
   link.remove();

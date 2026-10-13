@@ -17,6 +17,7 @@ import "./gas.css";
 import {ConfrontoPage,OffertePage,BollettePage,ParametriPage,FontiPage,StoricoPage} from "./pages/GasPages";
 import ImpostazioniPdfPage from "./pages/ImpostazioniPdfPage";
 
+import "../../simulatorShared.css";
 const nav = [
   { to: "/", label: "Confronto", icon: ArrowLeftRight },
   { to: "/bollette", label: "Bollette clienti", icon: FileText },

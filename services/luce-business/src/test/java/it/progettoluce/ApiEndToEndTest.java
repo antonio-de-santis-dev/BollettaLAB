@@ -311,7 +311,9 @@ class ApiEndToEndTest {
                 header()
                     .string(
                         "Content-Disposition",
-                        "attachment; filename=\"confronto-" + cid + ".pdf\""))
+                        org.hamcrest.Matchers.matchesPattern(
+                            "attachment;"
+                                + " filename=\"Cliente-test-ProgettoLuceBusiness-[0-9]{4}-[0-9]{2}-[0-9]{2}\\.pdf\"")))
             .andReturn()
             .getResponse()
             .getContentAsByteArray();

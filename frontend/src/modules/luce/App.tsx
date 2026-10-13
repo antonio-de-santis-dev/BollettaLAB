@@ -20,6 +20,7 @@ import FontiPage from "./pages/FontiPage";
 import StoricoPage from "./pages/StoricoPage";
 import ImpostazioniPdfPage from "./pages/ImpostazioniPdfPage";
 
+import "../../simulatorShared.css";
 const nav = [
   { to: "/", label: "Confronto", icon: ArrowLeftRight },
   { to: "/bollette", label: "Bollette clienti", icon: FileText },

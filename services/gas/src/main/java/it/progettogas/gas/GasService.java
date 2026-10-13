@@ -157,6 +157,14 @@ public class GasService {
               p.lines(),
               p.bands());
     }
+    if (kind.equals("offerte") || kind.equals("bollette")) {
+      @SuppressWarnings("unchecked")
+      Map<String, Object> copy = mapper.convertValue(data, Map.class);
+      String key = kind.equals("offerte") ? "name" : "client";
+      String name = Objects.toString(copy.get(key), "");
+      copy.put(key, name.substring(0, Math.min(180, name.length())) + " · copia");
+      data = copy;
+    }
     return save(kind, null, data, null);
   }
 
@@ -183,7 +191,12 @@ public class GasService {
   public List<Object> audit(String kind, long id) {
     entity(kind, id);
     return records.findByKindOrderByIdDesc("audit").stream()
-        .map(r -> codec.leggi(r.payload, Map.class))
+        .map(
+            r -> {
+              Map<String, Object> revision = new LinkedHashMap<>(codec.leggi(r.payload, Map.class));
+              revision.put("createdAt", r.createdAt.toString());
+              return revision;
+            })
         .filter(
             m ->
                 String.valueOf(m.get("recordId")).equals(String.valueOf(id))

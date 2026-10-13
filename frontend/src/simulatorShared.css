@@ -1,0 +1,106 @@
+/* Shared simulator presentation: same tokens and field hierarchy as Progetto Luce. */
+:is(.lab-module-luce, .lab-module-gas, .lab-module-luce-business) .field {
+  gap: 8px;
+}
+:is(.lab-module-luce, .lab-module-gas, .lab-module-luce-business)
+  .field
+  > span {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #243e33;
+  line-height: 1.5;
+}
+:is(.lab-module-luce, .lab-module-gas, .lab-module-luce-business)
+  .field
+  :is(input, select, textarea) {
+  background: #fff;
+  border: 1px solid #8b9f94;
+  border-radius: 8px;
+  min-height: 44px;
+  color: #172b23;
+  padding: 12px;
+}
+:is(.lab-module-luce, .lab-module-gas, .lab-module-luce-business)
+  .field
+  :is(input, select, textarea):focus-visible {
+  outline: 3px solid #b98732;
+  outline-offset: 2px;
+}
+:is(.lab-module-luce, .lab-module-gas, .lab-module-luce-business)
+  :is(fieldset, .tariff-row, .override-row) {
+  background: #f7faf7;
+  border: 1px solid #d5dfd7;
+  border-radius: 12px;
+  padding: 20px;
+  margin-bottom: 16px;
+}
+:is(.lab-module-luce, .lab-module-gas, .lab-module-luce-business) legend {
+  font-weight: 700;
+  padding: 0 8px;
+}
+:is(.lab-module-luce, .lab-module-gas, .lab-module-luce-business) .button {
+  min-height: 44px;
+}
+:is(.lab-module-luce, .lab-module-gas, .lab-module-luce-business) .destructive {
+  background: #fff0ed;
+  color: #99271b;
+  border: 1px solid #b43a2b;
+  font-weight: 700;
+}
+:is(.lab-module-luce, .lab-module-gas, .lab-module-luce-business) .notice {
+  border-left: 4px solid #194d3d;
+  background: #edf6ed;
+  color: #213d2a;
+  padding: 16px;
+}
+.revision-list {
+  display: grid;
+  gap: 16px;
+}
+.revision-list details {
+  border: 1px solid #cad7cf;
+  border-radius: 8px;
+  padding: 16px;
+}
+.revision-list summary {
+  font-weight: 700;
+  cursor: pointer;
+  line-height: 1.5;
+}
+.revision-values {
+  margin: 16px 0;
+}
+.revision-values > div {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) minmax(0, 2fr);
+  gap: 16px;
+  border-bottom: 1px solid #d9e1db;
+  padding: 12px 0;
+}
+.revision-values dt {
+  font-weight: 700;
+}
+.revision-values dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 600px) {
+  .revision-values > div {
+    grid-template-columns: 1fr;
+    gap: 6px;
+  }
+  :is(.lab-module-luce, .lab-module-gas, .lab-module-luce-business)
+    :is(fieldset, .tariff-row, .override-row) {
+    padding: 16px;
+  }
+}
+/* The platform header always stays above the shared simulator navigation. */
+:is(.lab-module-luce, .lab-module-gas, .lab-module-luce-business).app .sidebar {
+  top: 64px;
+  height: calc(100dvh - 64px);
+}
+:is(.lab-module-luce, .lab-module-gas, .lab-module-luce-business).app .topbar,
+:is(.lab-module-luce, .lab-module-gas, .lab-module-luce-business).app
+  .nav-scrim {
+  top: 64px;
+}

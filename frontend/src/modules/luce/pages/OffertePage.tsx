@@ -279,6 +279,10 @@ export default function OffertePage() {
                     </td>
                     <td>
                       <div className="row-actions">
+                        <button className="button secondary compact" onClick={() => {
+                          setEdit({ ...structuredClone(o), id: undefined, nomeOfferta: (o.nomeOfferta + " · copia").slice(0, 150) });
+                          setNotice("Copia dell’offerta preparata: verifica il nome e salva per crearla. L’originale resta disponibile.");
+                        }}>Duplica</button>
                         <button
                           className="icon-button"
                           aria-label={`Modifica ${o.nomeOfferta}`}

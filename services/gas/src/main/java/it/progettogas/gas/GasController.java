@@ -110,11 +110,21 @@ public class GasController {
         list.isEmpty()
             ? PdfPersonalizzazione.predefinita()
             : service.read("pdf-settings", list.get(0).id(), PdfPersonalizzazione.class);
+    var saved = service.get("confronti", id);
+    var comparison = service.read("confronti", id, Comparison.class);
     return ResponseEntity.ok()
         .cacheControl(CacheControl.noStore())
         .header(
-            HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=confronto-gas-" + id + ".pdf")
+            HttpHeaders.CONTENT_DISPOSITION,
+            ContentDisposition.attachment()
+                .filename(
+                    it.bollettalab.platform.PdfNames.comparison(
+                        comparison.bill().client(),
+                        "ProgettoGas",
+                        java.time.Instant.parse(saved.createdAt())))
+                .build()
+                .toString())
         .contentType(MediaType.APPLICATION_PDF)
-        .body(pdf.generate(id, service.read("confronti", id, Comparison.class), opts));
+        .body(pdf.generate(id, comparison, opts));
   }
 }

@@ -6,6 +6,7 @@ import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.*;
 import org.springframework.core.env.Environment;
 
+@org.springframework.scheduling.annotation.EnableScheduling
 @Configuration
 public class PlatformConfiguration {
   @Bean
@@ -29,9 +30,27 @@ public class PlatformConfiguration {
   }
 
   @Bean
+  @ConditionalOnMissingBean(ActivitySink.class)
+  public ActivitySink remoteActivities(
+      Environment env,
+      org.springframework.jdbc.core.JdbcTemplate db,
+      com.fasterxml.jackson.databind.ObjectMapper json) {
+    if (env.matchesProfiles("test")) return event -> {};
+    return new ActivityOutbox(
+        db,
+        json,
+        env.getProperty("platform.users-url", "http://utenti:8080"),
+        env.getProperty("platform.internal-key", ""));
+  }
+
+  @Bean
   public FilterRegistrationBean<PlatformFilter> platformFilter(
-      IdentityProvider identities, InternalClient client, Environment env) {
-    var registration = new FilterRegistrationBean<>(new PlatformFilter(identities, client, env));
+      IdentityProvider identities,
+      InternalClient client,
+      Environment env,
+      ActivitySink activities) {
+    var registration =
+        new FilterRegistrationBean<>(new PlatformFilter(identities, client, env, activities));
     registration.setOrder(-100);
     return registration;
   }

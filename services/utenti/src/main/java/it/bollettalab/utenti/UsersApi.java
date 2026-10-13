@@ -9,11 +9,13 @@ import org.springframework.web.bind.annotation.*;
 
 @RestController
 public class UsersApi {
+  final Activities activities;
   final Accounts accounts;
   final InternalClient client;
   final Environment env;
 
-  UsersApi(Accounts a, InternalClient c, Environment e) {
+  UsersApi(Accounts a, InternalClient c, Environment e, Activities activities) {
+    this.activities = activities;
     accounts = a;
     client = c;
     env = e;
@@ -146,6 +148,32 @@ public class UsersApi {
     return Map.of("updated", true);
   }
 
+  @PostMapping("/api/company/agents/create")
+  Object createAgent(@RequestBody Map<String, Object> body) {
+    RequestContext.owner();
+    Map<?, ?> access =
+        client.get(
+            payments() + "/internal/access/" + RequestContext.required().workspaceId(), Map.class);
+    if (!Boolean.TRUE.equals(access.get("active")))
+      throw new HttpProblem(402, "Attiva prima il piano impresa");
+    return accounts.createAgent(body, ((Number) access.get("agentSeats")).intValue());
+  }
+
+  @PostMapping("/api/company/agents/{id}/reset-password")
+  Object resetAgent(@PathVariable String id) {
+    return accounts.resetAgent(id);
+  }
+
+  @GetMapping("/api/profile")
+  Object profile() {
+    return accounts.profile();
+  }
+
+  @PutMapping("/api/profile")
+  Object profile(@RequestBody Map<String, Object> body) {
+    return accounts.updateProfile(body);
+  }
+
   @GetMapping("/api/admin/users")
   Object users() {
     RequestContext.admin();
@@ -158,12 +186,57 @@ public class UsersApi {
                 + " w.id=a.workspace_id ORDER BY a.created_at DESC");
   }
 
+  @PostMapping("/api/activity")
+  Object clientActivity(@RequestBody Map<String, Object> body) {
+    Identity actor = RequestContext.required();
+    accounts.throttle("client-activity", actor.id(), 60);
+    String type = Accounts.str(body, "type");
+    if (!Set.of("VALIDATION", "UI_ERROR").contains(type))
+      throw new HttpProblem(400, "Tipo attività non valido");
+    activities.record(
+        new ActivityEvent(
+            actor.workspaceId(),
+            actor.id(),
+            actor.name(),
+            actor.email(),
+            type.equals("VALIDATION") ? "Validazione form" : "Errore interfaccia",
+            type.equals("VALIDATION")
+                ? "Invio del form impedito: controllare i campi obbligatori e i formati."
+                : "Il browser ha segnalato un errore dell’interfaccia. Verificare il flusso e la"
+                    + " console locale.",
+            type.equals("VALIDATION") ? "WARNING" : "ERROR",
+            "utenti",
+            null,
+            "CLIENT",
+            "interfaccia",
+            0));
+    return Map.of("recorded", true);
+  }
+
+  @PostMapping("/internal/audit/batch")
+  Object activities(@RequestBody List<ActivityEvent> events) {
+    if (events.isEmpty() || events.size() > 100)
+      throw new HttpProblem(400, "Dimensione batch non valida");
+    events.forEach(activities::record);
+    return Map.of("recorded", true);
+  }
+
+  @PostMapping("/internal/audit")
+  Object activity(@RequestBody ActivityEvent event) {
+    activities.record(event);
+    return Map.of("recorded", true);
+  }
+
   @GetMapping("/api/admin/logs")
-  Object logs() {
-    RequestContext.admin();
-    return accounts
-        .jdbc()
-        .queryForList("SELECT * FROM audit_log ORDER BY created_at DESC LIMIT 300");
+  Object logs(
+      @RequestParam(defaultValue = "") String search,
+      @RequestParam(defaultValue = "") String status,
+      @RequestParam(defaultValue = "") String service,
+      @RequestParam(defaultValue = "") String from,
+      @RequestParam(defaultValue = "") String to,
+      @RequestParam(defaultValue = "0") int page,
+      @RequestParam(defaultValue = "30") int size) {
+    return activities.search(search, status, service, from, to, page, size);
   }
 
   @PatchMapping("/api/admin/users/{id}")

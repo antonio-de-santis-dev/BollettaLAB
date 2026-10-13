@@ -1,3 +1,4 @@
+import { pdfFilename, savePdf } from "../../../pdfDownload";
 import { useState } from "react";
 import Decimal from "decimal.js";
 import {
@@ -25,19 +26,12 @@ export default function Risultato({
     setBusy(true);
     setError("");
     try {
-      const { data } = await api.get<Blob>(
+      const { data, headers } = await api.get<Blob>(
         `/business/simulazioni/${s.id}/pdf`,
         { responseType: "blob" },
       );
       verificaPdf(data);
-      const url = URL.createObjectURL(data);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `simulazione-business-${s.id}.pdf`;
-      document.body.append(a);
-      a.click();
-      a.remove();
-      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      savePdf(data, pdfFilename(headers["content-disposition"]));
     } catch (e) {
       setError(await errorePdf(e));
     } finally {

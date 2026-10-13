@@ -8,7 +8,7 @@ import ScaricaPdf from "../components/ScaricaPdf";
 describe("Download PDF", () => {
   it("scarica il confronto selezionato con nome stabile e rilascia il blob", async () => {
     const blob = new Blob(["%PDF-1.7"], { type: "application/pdf" });
-    vi.spyOn(api, "get").mockResolvedValue({ data: blob });
+    vi.spyOn(api, "get").mockResolvedValue({ data: blob, headers: {"content-disposition":'attachment; filename="Mario-Rossi-ProgettoLuce-2026-10-13.pdf"'} });
     const create = vi.fn(() => "blob:test-pdf"),
       revoke = vi.fn();
     Object.defineProperty(URL, "createObjectURL", {
@@ -22,7 +22,7 @@ describe("Download PDF", () => {
     const click = vi
       .spyOn(HTMLAnchorElement.prototype, "click")
       .mockImplementation(function (this: HTMLAnchorElement) {
-        expect(this.download).toBe("confronto-42.pdf");
+        expect(this.download).toBe("Mario-Rossi-ProgettoLuce-2026-10-13.pdf");
         expect(this.href).toBe("blob:test-pdf");
       });
     render(

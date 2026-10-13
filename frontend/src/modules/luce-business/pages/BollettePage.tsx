@@ -341,6 +341,10 @@ export default function BollettePage() {
                     <td>{b.dati.fornitore}</td>
                     <td>
                       <div className="row-actions">
+                        <button className="button secondary compact" onClick={() => {
+                          setEdit({ dati: { ...structuredClone(b.dati), cliente: (b.dati.cliente + " · copia").slice(0, 150) } });
+                          setNotice("Copia della bolletta preparata: verifica cliente e periodo, poi salva per crearla.");
+                        }}>Duplica</button>
                         <button
                           className="icon-button"
                           aria-label={`Modifica bolletta ${b.dati.cliente}`}

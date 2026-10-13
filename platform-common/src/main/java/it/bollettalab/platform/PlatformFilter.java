@@ -9,6 +9,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 public class PlatformFilter extends OncePerRequestFilter {
+  private final ActivitySink activities;
   private final IdentityProvider identities;
   private final InternalClient client;
   private final Environment env;
@@ -24,6 +25,15 @@ public class PlatformFilter extends OncePerRequestFilter {
           "/api/auth/config");
 
   public PlatformFilter(IdentityProvider identities, InternalClient client, Environment env) {
+    this(identities, client, env, event -> {});
+  }
+
+  public PlatformFilter(
+      IdentityProvider identities,
+      InternalClient client,
+      Environment env,
+      ActivitySink activities) {
+    this.activities = activities;
     this.identities = identities;
     this.client = client;
     this.env = env;
@@ -40,6 +50,7 @@ public class PlatformFilter extends OncePerRequestFilter {
     res.setHeader("X-Content-Type-Options", "nosniff");
     res.setHeader("Cache-Control", "no-store");
     res.setHeader("X-Request-Id", UUID.randomUUID().toString());
+    boolean failed = false;
     try {
       String path = RequestPaths.of(req);
       if (!env.getProperty("platform.security.enabled", Boolean.class, true)
@@ -104,8 +115,61 @@ public class PlatformFilter extends OncePerRequestFilter {
             res.getOutputStream(),
             Map.of("message", "Servizio temporaneamente non disponibile. Riprova."));
       }
+    } catch (ServletException | IOException | RuntimeException e) {
+      failed = true;
+      throw e;
     } finally {
+      try {
+        recordActivity(req, res, failed);
+      } catch (RuntimeException e) {
+        org.slf4j.LoggerFactory.getLogger(getClass())
+            .warn("Activity recording failed: requestId={}", res.getHeader("X-Request-Id"));
+      }
       RequestContext.clear();
     }
+  }
+
+  private void recordActivity(HttpServletRequest req, HttpServletResponse res, boolean failed) {
+    String path;
+    try {
+      path = RequestPaths.of(req);
+    } catch (HttpProblem e) {
+      path = "/api/percorso-non-valido";
+    }
+    if (!path.startsWith("/api/")
+        || !env.getProperty("platform.security.enabled", Boolean.class, true)) return;
+    int code = failed ? 500 : res.getStatus();
+    if (code < 400
+        && Set.of(
+                "/api/auth/me",
+                "/api/auth/config",
+                "/api/wallet",
+                "/api/admin/logs",
+                "/api/activity")
+            .contains(path)) return;
+    Identity actor = RequestContext.identity();
+    if (actor == null && req.getAttribute("lab.audit.identity") instanceof Identity login)
+      actor = login;
+    String method = req.getMethod(), service = env.getProperty("platform.service", "unknown");
+    Object matched =
+        req.getAttribute(
+            org.springframework.web.servlet.HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
+    String route = matched == null ? path : matched.toString();
+    String action = ActivityLabels.action(path, method);
+    String state = code >= 500 ? "ERROR" : code >= 400 ? "WARNING" : "COMPLETED";
+    activities.record(
+        new ActivityEvent(
+            actor == null ? null : actor.workspaceId(),
+            actor == null ? null : actor.id(),
+            actor == null ? "Accesso non autenticato" : actor.name(),
+            actor == null ? "" : actor.email(),
+            action,
+            action + " · " + service + " · HTTP " + code,
+            state,
+            service,
+            res.getHeader("X-Request-Id"),
+            method,
+            route,
+            code));
   }
 }

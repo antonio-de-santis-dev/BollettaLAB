@@ -1,0 +1,12 @@
+ALTER TABLE audit_log ADD actor_name VARCHAR(200);
+ALTER TABLE audit_log ADD actor_email VARCHAR(254);
+ALTER TABLE audit_log ADD description VARCHAR(500);
+ALTER TABLE audit_log ADD status VARCHAR(20) NOT NULL DEFAULT 'COMPLETED';
+ALTER TABLE audit_log ADD service VARCHAR(30) NOT NULL DEFAULT 'utenti';
+ALTER TABLE audit_log ADD request_id VARCHAR(36);
+ALTER TABLE audit_log ADD http_method VARCHAR(10);
+ALTER TABLE audit_log ADD route VARCHAR(300);
+ALTER TABLE audit_log ADD http_status INT;
+CREATE INDEX idx_audit_status_created ON audit_log(status,created_at);
+CREATE INDEX idx_audit_actor_created ON audit_log(actor_id,created_at);
+CREATE INDEX idx_audit_service_created ON audit_log(service,created_at);

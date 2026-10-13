@@ -64,11 +64,19 @@ public class BusinessController {
 
   @GetMapping(value = "/simulazioni/{id}/pdf", produces = MediaType.APPLICATION_PDF_VALUE)
   public ResponseEntity<byte[]> pdf(@PathVariable @Positive Long id) throws IOException {
+    var saved = service.leggi(id);
     return ResponseEntity.ok()
         .cacheControl(CacheControl.noStore())
         .header(
             HttpHeaders.CONTENT_DISPOSITION,
-            "attachment; filename=simulazione-business-" + id + ".pdf")
-        .body(pdf.genera(service.leggi(id)));
+            ContentDisposition.attachment()
+                .filename(
+                    it.bollettalab.platform.PdfNames.comparison(
+                        saved.dati().input().ragioneSociale(),
+                        "ProgettoLuceBusiness",
+                        saved.creataIl()))
+                .build()
+                .toString())
+        .body(pdf.genera(saved));
   }
 }

@@ -84,14 +84,22 @@ public class Accounts {
   }
 
   void audit(String action, String subject) {
-    Identity i = RequestContext.identity();
+    audit(action, subject, RequestContext.identity());
+  }
+
+  private void audit(String action, String subject, Identity i) {
     db.update(
-        "INSERT INTO audit_log(id,workspace_id,actor_id,action,subject_id) VALUES(?,?,?,?,?)",
+        "INSERT INTO"
+            + " audit_log(id,workspace_id,actor_id,action,subject_id,actor_name,actor_email,description)"
+            + " VALUES(?,?,?,?,?,?,?,?)",
         id(),
         i == null ? null : i.workspaceId(),
         i == null ? null : i.id(),
         action,
-        subject);
+        subject,
+        i == null ? null : i.name(),
+        i == null ? null : i.email(),
+        action.replace("_", " ") + " · " + subject);
   }
 
   Map<String, Object> account(String id) {
@@ -198,7 +206,8 @@ public class Accounts {
         str(m, "id"),
         Timestamp.from(Instant.now().plusSeconds(43200)));
     cookie(response, token);
-    audit("LOGIN", str(m, "id"));
+    request.setAttribute("lab.audit.identity", identity(m));
+    audit("LOGIN", str(m, "id"), identity(m));
     return identity(m);
   }
 
@@ -377,6 +386,161 @@ public class Accounts {
     return dev()
         ? Map.of("message", "Invito creato", "inviteUrl", link)
         : Map.of("message", "Invito inviato via email");
+  }
+
+  /** Creates an immediately visible agent; the generated secret is returned only once. */
+  @Transactional
+  public Map<String, Object> createAgent(Map<String, Object> body, int seats) {
+    RequestContext.owner();
+    Identity owner = RequestContext.required();
+    db.queryForMap("SELECT id FROM workspaces WHERE id=? FOR UPDATE", owner.workspaceId());
+    String em = email(str(body, "email")), name = str(body, "name");
+    if (name.isBlank() || name.length() > 200)
+      throw new HttpProblem(400, "Inserisci il nome dell'agente");
+    int occupied =
+        db.queryForObject(
+            "SELECT COUNT(*) FROM accounts WHERE workspace_id=? AND role='AGENT'",
+            Integer.class,
+            owner.workspaceId());
+    int pending =
+        db.queryForObject(
+            "SELECT COUNT(*) FROM account_tokens WHERE workspace_id=? AND purpose='INVITE' AND"
+                + " expires_at>? AND email<>?",
+            Integer.class,
+            owner.workspaceId(),
+            Timestamp.from(Instant.now()),
+            em);
+    if (occupied + pending >= seats)
+      throw new HttpProblem(409, "Posti agente esauriti. Acquista posti aggiuntivi");
+    String password = Tokens.create(), agent = id();
+    try {
+      db.update(
+          "INSERT INTO accounts(id,workspace_id,email,name,role,password_hash,status,verified)"
+              + " VALUES(?,?,?,?,'AGENT',?,'ACTIVE',TRUE)",
+          agent,
+          owner.workspaceId(),
+          em,
+          name,
+          encoder.encode(password));
+    } catch (org.springframework.dao.DuplicateKeyException e) {
+      throw new HttpProblem(409, "Email già registrata");
+    }
+    db.update(
+        "DELETE FROM account_tokens WHERE workspace_id=? AND email=? AND purpose='INVITE'",
+        owner.workspaceId(),
+        em);
+    audit("CREATE_AGENT", agent);
+    return Map.of(
+        "message",
+        "Agente creato e pronto per l'accesso. Conserva la password: viene mostrata soltanto ora.",
+        "email",
+        em,
+        "temporaryPassword",
+        password);
+  }
+
+  @Transactional
+  public Map<String, Object> resetAgent(String id) {
+    RequestContext.owner();
+    Identity owner = RequestContext.required();
+    var agent = account(id);
+    if (!owner.workspaceId().equals(str(agent, "workspace_id"))
+        || !"AGENT".equals(str(agent, "role"))) throw new HttpProblem(404, "Agente non trovato");
+    String password = Tokens.create();
+    db.update("UPDATE accounts SET password_hash=? WHERE id=?", encoder.encode(password), id);
+    db.update("DELETE FROM sessions WHERE user_id=?", id);
+    db.update("DELETE FROM account_tokens WHERE user_id=?", id);
+    audit("OWNER_RESET_AGENT_PASSWORD", id);
+    return Map.of(
+        "message",
+        "Password reimpostata. Le sessioni precedenti sono state revocate.",
+        "email",
+        str(agent, "email"),
+        "temporaryPassword",
+        password);
+  }
+
+  public Map<String, Object> profile() {
+    var a = account(RequestContext.required().id());
+    return Map.of(
+        "name",
+        str(a, "name"),
+        "email",
+        str(a, "email"),
+        "role",
+        str(a, "role"),
+        "companyName",
+        str(a, "company_name"),
+        "vatNumber",
+        str(a, "vat_number"),
+        "address",
+        str(a, "address"));
+  }
+
+  @Transactional
+  public Map<String, Object> updateProfile(Map<String, Object> body) {
+    Identity actor = RequestContext.required();
+    var a = account(actor.id());
+    String name = str(body, "name"), em = email(str(body, "email"));
+    if (name.isBlank() || name.length() > 200)
+      throw new HttpProblem(400, "Inserisci un nome di massimo 200 caratteri");
+    boolean emailChanged = !em.equals(str(a, "email"));
+    String nextPassword = Objects.toString(body.get("newPassword"), "");
+    if (emailChanged && !nextPassword.isEmpty())
+      throw new HttpProblem(
+          400, "Modifica prima l’email e verificala, poi cambia la password separatamente");
+    if (emailChanged || !nextPassword.isEmpty()) {
+      if (!encoder.matches(
+          Objects.toString(body.get("currentPassword"), ""), str(a, "password_hash")))
+        throw new HttpProblem(400, "La password attuale non è corretta");
+    }
+    if (!nextPassword.isEmpty()) password(nextPassword);
+    try {
+      db.update("UPDATE accounts SET name=?,email=? WHERE id=?", name, em, actor.id());
+    } catch (org.springframework.dao.DuplicateKeyException e) {
+      throw new HttpProblem(409, "Email già utilizzata da un altro account");
+    }
+    if (actor.owner()) {
+      String company = str(body, "companyName"),
+          vat = str(body, "vatNumber"),
+          address = str(body, "address");
+      if (company.isBlank()
+          || company.length() > 200
+          || !vat.matches("[0-9]{11}")
+          || address.isBlank()
+          || address.length() > 300)
+        throw new HttpProblem(400, "Controlla ragione sociale, partita IVA (11 cifre) e indirizzo");
+      db.update(
+          "UPDATE workspaces SET name=?,vat_number=?,address=? WHERE id=?",
+          company,
+          vat,
+          address,
+          actor.workspaceId());
+    }
+    if (!nextPassword.isEmpty()) {
+      db.update(
+          "UPDATE accounts SET password_hash=? WHERE id=?",
+          encoder.encode(nextPassword),
+          actor.id());
+      db.update("DELETE FROM sessions WHERE user_id=?", actor.id());
+      db.update("DELETE FROM account_tokens WHERE user_id=? AND purpose='RESET'", actor.id());
+    }
+    if (emailChanged) {
+      db.update("UPDATE accounts SET verified=FALSE WHERE id=?", actor.id());
+      String link = issue("VERIFY", actor.id(), actor.workspaceId(), em, name);
+      audit("UPDATE_PROFILE", actor.id());
+      var result = new HashMap<String, Object>();
+      result.put("message", "Dati aggiornati. Verifica la nuova email prima di nuovi acquisti.");
+      result.put("loginRequired", !nextPassword.isEmpty());
+      if (dev()) result.put("verificationUrl", link);
+      return result;
+    }
+    audit("UPDATE_PROFILE", actor.id());
+    return Map.of(
+        "message",
+        nextPassword.isEmpty() ? "Profilo aggiornato" : "Password aggiornata. Accedi nuovamente.",
+        "loginRequired",
+        !nextPassword.isEmpty());
   }
 
   @Transactional

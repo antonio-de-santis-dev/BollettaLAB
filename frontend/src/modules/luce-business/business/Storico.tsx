@@ -1,18 +1,19 @@
+import { Link } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { ArrowUpRight, ChevronLeft, ChevronRight } from "lucide-react";
 import { api, messaggioErrore } from "../api";
 import { Titolo, Caricamento, Errore } from "../components/ui";
 import { euro } from "../domain";
-import type { Pagina, Riepilogo, Simulazione } from "./model";
-import Risultato from "./Risultato";
+import type { Pagina, Riepilogo } from "./model";
+
 export default function Storico() {
   const [pagina, setPagina] = useState(0);
   const [data, setData] = useState<Pagina<Riepilogo> | null>(null);
-  const [selected, setSelected] = useState<Simulazione | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
-  const [opening, setOpening] = useState<number | null>(null);
+
   useEffect(() => {
     const c = new AbortController();
     setLoading(true);
@@ -33,19 +34,6 @@ export default function Storico() {
       });
     return () => c.abort();
   }, [pagina, retry]);
-  async function apri(id: number) {
-    setOpening(id);
-    setError("");
-    try {
-      setSelected(
-        (await api.get<Simulazione>(`/business/simulazioni/${id}`)).data,
-      );
-    } catch (e) {
-      setError(messaggioErrore(e));
-    } finally {
-      setOpening(null);
-    }
-  }
   return (
     <>
       <Titolo
@@ -101,14 +89,12 @@ export default function Storico() {
                       </span>
                     </td>
                     <td>
-                      <button
+                      <Link
                         className="button secondary compact"
-                        disabled={opening !== null}
-                        onClick={() => apri(s.id)}
+                        to={`/app/storico/luce-business/${s.id}?kind=business&from=advanced`}
                       >
-                        {opening === s.id ? "Caricamento…" : "Apri"}
-                        <ArrowUpRight size={16} />
-                      </button>
+                        Apri <ArrowUpRight size={16} />
+                      </Link>
                     </td>
                   </tr>
                 ))}
@@ -138,7 +124,6 @@ export default function Storico() {
           </div>
         </section>
       )}
-      {selected && <Risultato simulazione={selected} />}
     </>
   );
 }

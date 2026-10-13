@@ -1,13 +1,12 @@
-import { useState } from "react";
 import { ArrowUpRight, History } from "lucide-react";
 import { Link } from "react-router-dom";
 import { useLista } from "../api";
 import { euro, type Confronto } from "../domain";
 import { Titolo, Errore, Caricamento, Vuoto } from "../components/ui";
-import RisultatoView from "../components/RisultatoView";
+
 export default function StoricoPage() {
   const { data, loading, error, reload } = useLista<Confronto>("/confronti");
-  const [selected, setSelected] = useState<Confronto | null>(null);
+
   return (
     <>
       <Titolo
@@ -58,13 +57,13 @@ export default function StoricoPage() {
                     <td>{euro(c.dati.risultato.totale)}</td>
                     <td>{euro(c.dati.risultato.risparmioPeriodo)}</td>
                     <td>
-                      <button
+                      <Link
                         className="button secondary compact"
-                        onClick={() => setSelected(c)}
+                        to={`/app/storico/luce/${c.id}?from=luce`}
                       >
                         Apri
                         <ArrowUpRight size={16} />
-                      </button>
+                      </Link>
                     </td>
                   </tr>
                 ))}
@@ -73,7 +72,6 @@ export default function StoricoPage() {
           </div>
         </section>
       )}
-      {selected && <RisultatoView confronto={selected} />}
     </>
   );
 }

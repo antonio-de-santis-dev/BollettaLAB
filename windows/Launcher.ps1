@@ -4,7 +4,8 @@ $root=$PSScriptRoot
 $data=Join-Path $root 'data'
 $stateFile=Join-Path $data 'session.json'
 $configFile=Join-Path $data 'install.json'
-$baseUrl='http://127.0.0.1:8091'
+# Porte preferite: se una e occupata o riservata da Windows (Hyper-V, WSL, VPN) se ne sceglie un'altra.
+$defaultPorts=[ordered]@{web=8091;utenti=8101;pagamento=8102;luce=8103;'luce-business'=8104;gas=8105;mysql=33079}
 $services=@('utenti','pagamento','luce','luce-business','gas')
 $java=Join-Path $root 'runtime\bin\java.exe'
 $mysqld=Join-Path $root 'mysql\bin\mysqld.exe'
@@ -60,10 +61,39 @@ function Start-Owned($name,$exe,$parameters,$variables) {
         foreach($item in $saved.GetEnumerator()) { [Environment]::SetEnvironmentVariable($item.Key,$item.Value,'Process') }
     }
 }
-function Assert-Free($port) {
+function Port-Of($name) {
+    # Una sessione salvata da una versione precedente non contiene Ports: valgono le predefinite.
+    if($null -ne $script:state -and $null -ne $script:state.Ports -and $null -ne $script:state.Ports.$name) { return [int]$script:state.Ports.$name }
+    return $defaultPorts[$name]
+}
+function Base-Url { return "http://127.0.0.1:$(Port-Of 'web')" }
+function Test-Port($port) {
     $listener=New-Object Net.Sockets.TcpListener([Net.IPAddress]::Loopback,$port)
-    try { $listener.Start() } catch { throw "Porta $port occupata. Chiudi l'altra copia di BollettaLAB o il servizio Docker prima di avviare." }
-    finally { $listener.Stop() }
+    try { $listener.Start();return $true } catch { return $false } finally { $listener.Stop() }
+}
+function Get-PortOwner($port) {
+    try {
+        $connection=Get-NetTCPConnection -LocalPort $port -State Listen -ErrorAction Stop | Select-Object -First 1
+        $process=Get-Process -Id $connection.OwningProcess -ErrorAction Stop
+        return "usata da $($process.ProcessName) (PID $($process.Id))"
+    } catch { return 'riservata da Windows (Hyper-V, WSL o VPN) o non accessibile' }
+}
+function Select-Ports {
+    $chosen=[ordered]@{}
+    foreach($name in $defaultPorts.Keys) {
+        $port=$defaultPorts[$name]
+        if(-not (Test-Port $port) -or $chosen.Values -contains $port) {
+            $reason=Get-PortOwner $port
+            do {
+                # Porta 0: Windows assegna una porta libera, mai una riservata.
+                $listener=New-Object Net.Sockets.TcpListener([Net.IPAddress]::Loopback,0)
+                $listener.Start();$port=$listener.LocalEndpoint.Port;$listener.Stop()
+            } while($chosen.Values -contains $port)
+            Write-Host "Porta $($defaultPorts[$name]) ($name) non disponibile, $reason. Uso la porta $port." -ForegroundColor Yellow
+        }
+        $chosen[$name]=$port
+    }
+    return $chosen
 }
 function Test-Mysql {
     $probe=Start-Process -FilePath (Join-Path $root 'mysql\bin\mysql.exe') -ArgumentList @(('"--defaults-extra-file='+(Join-Path $data 'root-client.ini')+'"'),'--connect-timeout=2','-Nse','"SELECT 1"') -WindowStyle Hidden -PassThru -Wait -RedirectStandardOutput (Join-Path $root 'logs\mysql-check.log') -RedirectStandardError (Join-Path $root 'logs\mysql-check.error.log')
@@ -95,10 +125,10 @@ function Stop-All {
             & (Join-Path $root 'mysql\bin\mysqladmin.exe') ("--defaults-extra-file="+(Join-Path $data 'root-client.ini')) '--connect-timeout=3' 'shutdown' 2>$null | Out-Null
             if($LASTEXITCODE -ne 0 -or -not $process.WaitForExit(30000)) { throw 'MySQL non si arresta: consulta logs. Il database non e stato terminato forzatamente.' }
         } elseif($entry.Name -eq 'gateway') {
-            try { Invoke-RestMethod "$baseUrl/portable/shutdown" -Method Post -Headers @{'X-Portable-Token'=$script:state.Token} -TimeoutSec 5 | Out-Null } catch {}
+            try { Invoke-RestMethod "$(Base-Url)/portable/shutdown" -Method Post -Headers @{'X-Portable-Token'=$script:state.Token} -TimeoutSec 5 | Out-Null } catch {}
             if(-not $process.WaitForExit(10000)) { Get-Owned $entry | Stop-Process -Force }
         } elseif($services -contains $entry.Name) {
-            $port=8101+[Array]::IndexOf($services,$entry.Name)
+            $port=Port-Of $entry.Name
             try { Invoke-RestMethod "http://127.0.0.1:$port/internal/portable/shutdown" -Method Post -Headers @{'X-Internal-Key'=$config.InternalKey} -TimeoutSec 5 | Out-Null } catch {}
             if(-not $process.WaitForExit(45000)) { Get-Owned $entry | Stop-Process -Force }
         } else {
@@ -118,15 +148,14 @@ try {
     if($null -ne $script:state) {
         $alive=@($script:state.Processes | ForEach-Object { Get-Owned $_ } | Where-Object { $null -ne $_ })
         if($alive.Count -gt 0) {
-            try { $instance=Invoke-RestMethod "$baseUrl/portable/status" -TimeoutSec 2 } catch { $instance='' }
+            try { $instance=Invoke-RestMethod "$(Base-Url)/portable/status" -TimeoutSec 2 } catch { $instance='' }
             if($instance -eq $script:state.Instance -and $alive.Count -eq 7) {
-                Write-Host 'BollettaLAB e gia aperto.'
-                if(-not $NoBrowser) { Start-Process "$baseUrl/" };exit 0
+                Write-Host "BollettaLAB e gia aperto: $(Base-Url)"
+                if(-not $NoBrowser) { Start-Process "$(Base-Url)/" };exit 0
             }
             throw 'Avvio precedente incompleto: usa Ferma BollettaLAB e poi Avvia BollettaLAB.'
         }
     }
-    foreach($port in @(8091,8101,8102,8103,8104,8105,33079)) { Assert-Free $port }
     foreach($file in @($java,$mysqld,(Join-Path $root 'app\platform-common.jar'),(Join-Path $root 'web\index.html'))) {
         if(-not (Test-Path -LiteralPath $file)) { throw 'Pacchetto incompleto. Estrai tutto lo ZIP prima di avviare.' }
     }
@@ -138,14 +167,16 @@ try {
         $config=[pscustomobject]@{AdminEmail='admin@bollettalab.local';AdminPassword=(New-Secret);InternalKey=(New-Secret);RootPassword=(New-Secret);DbPasswords=$passwords}
         Write-Utf8 $configFile ($config | ConvertTo-Json -Depth 8)
     }
-    # Questi file restano locali; nessuna password e presente nel pacchetto distribuito.
-    Write-Utf8 (Join-Path $data 'root-client.ini') "[client]`nhost=127.0.0.1`nport=33079`nprotocol=tcp`nuser=root`npassword=$($config.RootPassword)`n"
-    $script:state=@{Instance=[Guid]::NewGuid().ToString();Token=(New-Secret);Processes=@()}
+    $ports=Select-Ports
+    $script:state=@{Instance=[Guid]::NewGuid().ToString();Token=(New-Secret);Processes=@();Ports=$ports;Url="http://127.0.0.1:$($ports.web)"}
     Save-State
+    $baseUrl=Base-Url;$mysqlPort=Port-Of 'mysql'
+    # Questi file restano locali; nessuna password e presente nel pacchetto distribuito.
+    Write-Utf8 (Join-Path $data 'root-client.ini') "[client]`nhost=127.0.0.1`nport=$mysqlPort`nprotocol=tcp`nuser=root`npassword=$($config.RootPassword)`n"
     $mysqlRoot=(Join-Path $root 'mysql').Replace('\','/')
     $mysqlData=(Join-Path $data 'mysql').Replace('\','/')
     $ini=Join-Path $data 'my.ini'
-    Write-Utf8 $ini "[mysqld]`nbasedir=`"$mysqlRoot`"`ndatadir=`"$mysqlData`"`nbind-address=127.0.0.1`nport=33079`nmysqlx=0`nlocal-infile=0`nsecure-file-priv=NULL`ncharacter-set-server=utf8mb4`ncollation-server=utf8mb4_unicode_ci`ndefault-time-zone=+00:00`ninnodb-buffer-pool-size=128M`nmax-connections=100`n"
+    Write-Utf8 $ini "[mysqld]`nbasedir=`"$mysqlRoot`"`ndatadir=`"$mysqlData`"`nbind-address=127.0.0.1`nport=$mysqlPort`nmysqlx=0`nlocal-infile=0`nsecure-file-priv=NULL`ncharacter-set-server=utf8mb4`ncollation-server=utf8mb4_unicode_ci`ndefault-time-zone=+00:00`ninnodb-buffer-pool-size=128M`nmax-connections=100`n"
     $bootstrap=Join-Path $data 'bootstrap.sql'
     $installed=Join-Path $data 'mysql-ready.txt'
     if(-not (Test-Path -LiteralPath $installed)) {
@@ -179,18 +210,19 @@ try {
     # mysql-init e gia terminato: lo stato corrente contiene solo i sette processi persistenti.
     $script:state.Processes=@($script:state.Processes | Where-Object Name -ne 'mysql-init');Save-State
     foreach($name in $services) {
-        $port=8101+[Array]::IndexOf($services,$name);$db=$name.Replace('-','_')
-        $variables=@{SERVER_PORT=$port;SERVER_ADDRESS='127.0.0.1';SPRING_PROFILES_ACTIVE='dev';INTERNAL_KEY=$config.InternalKey;USERS_URL='http://127.0.0.1:8101';PAYMENT_URL='http://127.0.0.1:8102';DB_URL="jdbc:mysql://127.0.0.1:33079/$($db)?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true";DB_USER=$db;DB_PASSWORD=$config.DbPasswords.$name;PUBLIC_URL=$baseUrl;COOKIE_SECURE='false';ADMIN_EMAIL=$config.AdminEmail;ADMIN_PASSWORD=$config.AdminPassword;PORTABLE_INSTANCE=$script:state.Instance}
+        $port=Port-Of $name;$db=$name.Replace('-','_')
+        $variables=@{SERVER_PORT=$port;SERVER_ADDRESS='127.0.0.1';SPRING_PROFILES_ACTIVE='dev';INTERNAL_KEY=$config.InternalKey;USERS_URL="http://127.0.0.1:$(Port-Of 'utenti')";PAYMENT_URL="http://127.0.0.1:$(Port-Of 'pagamento')";DB_URL="jdbc:mysql://127.0.0.1:$mysqlPort/$($db)?connectionTimeZone=UTC&forceConnectionTimeZoneToSession=true";DB_USER=$db;DB_PASSWORD=$config.DbPasswords.$name;PUBLIC_URL=$baseUrl;COOKIE_SECURE='false';ADMIN_EMAIL=$config.AdminEmail;ADMIN_PASSWORD=$config.AdminPassword;PORTABLE_INSTANCE=$script:state.Instance}
         $parameters=@('-Xms48m','-Xmx384m','-Dfile.encoding=UTF-8','-jar',('"'+(Join-Path $root "app\$name.jar")+'"'),'--platform.portable-enabled=true','--server.shutdown=graceful','--spring.lifecycle.timeout-per-shutdown-phase=20s')
         foreach($domain in $services | Where-Object { $_ -ne 'utenti' }) {
-            $domainPort=8101+[Array]::IndexOf($services,$domain)
+            $domainPort=Port-Of $domain
             $parameters+="--platform.domain-urls.$domain=http://127.0.0.1:$domainPort"
         }
         Write-Host "Avvio $name..."
         Start-Owned $name $java $parameters $variables | Out-Null
     }
-    foreach($name in $services) { Wait-Service $name (8101+[Array]::IndexOf($services,$name)) }
-    Start-Owned 'gateway' $java @('-Xms16m','-Xmx128m','-cp',('"'+(Join-Path $root 'app\platform-common.jar')+'"'),'it.bollettalab.platform.portable.PortableGateway') @{PORTABLE_TOKEN=$script:state.Token;PORTABLE_INSTANCE=$script:state.Instance} | Out-Null
+    foreach($name in $services) { Wait-Service $name (Port-Of $name) }
+    $servicePorts=($services | ForEach-Object { "$_=$(Port-Of $_)" }) -join ','
+    Start-Owned 'gateway' $java @('-Xms16m','-Xmx128m','-cp',('"'+(Join-Path $root 'app\platform-common.jar')+'"'),'it.bollettalab.platform.portable.PortableGateway') @{PORTABLE_TOKEN=$script:state.Token;PORTABLE_INSTANCE=$script:state.Instance;PORTABLE_PORT=(Port-Of 'web');PORTABLE_SERVICE_PORTS=$servicePorts} | Out-Null
     $ready=$false
     for($i=0;$i -lt 30;$i++) {
         try { if((Invoke-RestMethod "$baseUrl/portable/status" -TimeoutSec 2) -eq $script:state.Instance) { $ready=$true;break } } catch {}

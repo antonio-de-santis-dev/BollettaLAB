@@ -120,4 +120,15 @@ class PortableGatewayTest {
       assertEquals(200, get(g, "/portable/status").statusCode());
     }
   }
+
+  @Test
+  void servicePortsChosenByTheLauncherReplaceOnlyTheNamedDefaults() {
+    var services = PortableGateway.services("utenti=50001, gas=50005");
+    assertEquals(URI.create("http://127.0.0.1:50001"), services.get("utenti"));
+    assertEquals(URI.create("http://127.0.0.1:50005"), services.get("gas"));
+    assertEquals(URI.create("http://127.0.0.1:8102"), services.get("pagamento"));
+    assertEquals(5, PortableGateway.services(null).size());
+    assertThrows(IllegalArgumentException.class, () -> PortableGateway.services("altro=1"));
+    assertThrows(IllegalArgumentException.class, () -> PortableGateway.services("luce=70000"));
+  }
 }

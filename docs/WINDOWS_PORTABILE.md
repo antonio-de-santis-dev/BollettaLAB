@@ -7,7 +7,7 @@ Branch dedicato: `vaio-windos`. Riprende il metodo della versione Windows di Pro
 In GitHub apri **Actions → BollettaLAB Windows portable**, seleziona l'ultima esecuzione verde di `vaio-windos`, quindi l'artifact **BollettaLAB-Windows-x64**. GitHub richiede accesso per scaricare gli artifact. Dentro trovi `BollettaLAB-Windows-x64.zip` e `SHA256.txt`: è lo ZIP interno che puoi girare al collega. Gli artifact durano 30 giorni; si possono rigenerare con Run workflow sul branch.
 
 1. Estrai tutto lo ZIP in una cartella locale scrivibile, ad esempio `Documenti\BollettaLAB`.
-2. Esegui `Avvia BollettaLAB.cmd`. Attendi l'inizializzazione del database e dei servizi; il browser si apre su **http://127.0.0.1:8091**.
+2. Esegui `Avvia BollettaLAB.cmd`. Attendi l'inizializzazione del database e dei servizi; il browser si apre su **http://127.0.0.1:8091**, oppure sull'indirizzo indicato dal launcher se quella porta non è disponibile.
 3. `Credenziali Admin.cmd` mostra email e password iniziale generate sul PC. Accedi normalmente, oppure registra un privato/impresa.
 4. Usa `Ferma BollettaLAB.cmd` prima di spegnere o copiare i dati. Chiudere il browser non arresta i processi.
 
@@ -15,10 +15,10 @@ Il destinatario non deve installare JDK/Java, Docker, MySQL, Node o Maven. Nessu
 
 ## Dati e sicurezza locale
 
-- MySQL ascolta su `127.0.0.1:33079`; backend su `127.0.0.1:8101–8105`; ingresso web su `127.0.0.1:8091`.
+- Porte preferite, solo su loopback: MySQL `33079`, backend `8101–8105`, ingresso web `8091`. Se una porta è occupata o rientra negli intervalli che Windows riserva (Hyper-V, WSL, VPN: `netsh interface ipv4 show excludedportrange protocol=tcp`), il launcher chiede al sistema una porta libera, indica il programma che occupava quella preferita e salva le porte scelte in `data/session.json`, usate anche da Ferma e da `Credenziali Admin.cmd`. I dati non dipendono dalle porte.
 - Il launcher genera password casuali, chiave interna e credenziali admin in `data/install.json`. Ogni dominio usa database e utenza separati. Questi dati non sono nello ZIP distribuito.
 - Il gateway respinge Host/Origin estranei, non inoltra chiavi interne dal browser e rende irraggiungibili i percorsi `/internal`. Gli endpoint di arresto dei servizi sono condizionali e protetti dalla chiave interna.
-- Il doppio avvio della stessa cartella riutilizza l'istanza; una seconda copia trova le porte occupate. Prima dell'arresto ogni PID viene verificato con percorso eseguibile e istante di creazione, per non terminare processi estranei.
+- Il doppio avvio della stessa cartella riutilizza l'istanza; non avviare contemporaneamente due cartelle diverse, perché userebbero database separati su porte diverse. Prima dell'arresto ogni PID viene verificato con percorso eseguibile e istante di creazione, per non terminare processi estranei.
 - I servizi vengono arrestati prima di MySQL. Il database viene chiuso con mysqladmin, senza arresto forzato. Per Java un processo bloccato può essere terminato dal launcher solo dopo verifica della sua proprietà.
 - Il pacchetto usa il profilo `dev`: pagamenti simulati, nessun addebito, link di verifica/invito/reset disponibili per prove. Non è un server per clienti remoti né una distribuzione commerciale pronta per internet.
 

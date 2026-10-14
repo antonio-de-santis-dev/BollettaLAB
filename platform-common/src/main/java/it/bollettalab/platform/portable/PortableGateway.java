@@ -215,27 +215,41 @@ public final class PortableGateway implements AutoCloseable {
     executor.shutdown();
   }
 
+  /** Default ports; the launcher passes others when one is busy or reserved by Windows. */
+  static final Map<String, Integer> DEFAULT_SERVICE_PORTS =
+      Map.of("utenti", 8101, "pagamento", 8102, "luce", 8103, "luce-business", 8104, "gas", 8105);
+
+  /** Parses "utenti=8101,pagamento=8102,..."; a missing value keeps the default port. */
+  static Map<String, URI> services(String ports) {
+    var result = new java.util.HashMap<String, URI>();
+    DEFAULT_SERVICE_PORTS.forEach(
+        (name, port) -> result.put(name, URI.create("http://127.0.0.1:" + port)));
+    if (ports != null && !ports.isBlank())
+      for (String pair : ports.split(",")) {
+        String[] parts = pair.trim().split("=", 2);
+        if (parts.length != 2 || !DEFAULT_SERVICE_PORTS.containsKey(parts[0]))
+          throw new IllegalArgumentException("Porta servizio non valida: " + pair);
+        result.put(parts[0], URI.create("http://127.0.0.1:" + port(parts[1])));
+      }
+    return result;
+  }
+
+  static int port(String value) {
+    int port = Integer.parseInt(value.trim());
+    if (port < 1 || port > 65535) throw new IllegalArgumentException("Porta non valida: " + value);
+    return port;
+  }
+
   public static void main(String[] args) throws Exception {
-    Map<String, URI> services =
-        Map.of(
-            "utenti",
-            URI.create("http://127.0.0.1:8101"),
-            "pagamento",
-            URI.create("http://127.0.0.1:8102"),
-            "luce",
-            URI.create("http://127.0.0.1:8103"),
-            "luce-business",
-            URI.create("http://127.0.0.1:8104"),
-            "gas",
-            URI.create("http://127.0.0.1:8105"));
+    String configured = System.getenv("PORTABLE_PORT");
     PortableGateway gateway =
         new PortableGateway(
-            8091,
+            configured == null || configured.isBlank() ? 8091 : port(configured),
             Path.of("web"),
-            services,
+            services(System.getenv("PORTABLE_SERVICE_PORTS")),
             System.getenv("PORTABLE_TOKEN"),
             System.getenv("PORTABLE_INSTANCE"));
     Runtime.getRuntime().addShutdownHook(new Thread(gateway::close));
-    System.out.println("BollettaLAB pronto: http://127.0.0.1:8091");
+    System.out.println("BollettaLAB pronto: http://127.0.0.1:" + gateway.port());
   }
 }

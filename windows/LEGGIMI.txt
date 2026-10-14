@@ -2,8 +2,9 @@ BollettaLAB - Windows x64
 
 1. Estrai TUTTO lo ZIP in una cartella scrivibile, ad esempio Documenti\BollettaLAB.
 2. Doppio clic su "Avvia BollettaLAB.cmd". La prima apertura inizializza MySQL;
-   attendi che compaia il browser. Apri http://127.0.0.1:8091 se necessario.
-3. "Credenziali Admin.cmd" mostra email e password iniziale generate sul tuo PC.
+   attendi che compaia il browser. L'indirizzo abituale e http://127.0.0.1:8091;
+   se quella porta non e disponibile il launcher ne sceglie un'altra e la mostra.
+3. "Credenziali Admin.cmd" mostra email, password iniziale e indirizzo attuale.
 4. Quando hai finito usa "Ferma BollettaLAB.cmd". Chiudere il browser non ferma
    i servizi. I dati restano in data, i log in logs.
 
@@ -18,8 +19,11 @@ Login, registrazione, due agenti, quota 80, storico e PDF sono gli stessi della 
 I dati del Docker/server non vengono importati e questo PC usa un database separato.
 Senza internet puoi lavorare con i dati inseriti; fonti ufficiali online richiedono rete.
 
-Se una porta e occupata (8091, 8101-8105, 33079), chiudi l'altra copia o il Docker
-di BollettaLAB. Non avviare due cartelle della stessa app contemporaneamente.
+Porte: di norma 8091 (web), 8101-8105 (servizi) e 33079 (database), solo su
+127.0.0.1. Se una e occupata da un altro programma o riservata da Windows
+(Hyper-V, WSL, VPN aziendali) il launcher usa automaticamente una porta libera e
+lo scrive nella finestra. I dati non cambiano. Non avviare due cartelle della
+stessa app contemporaneamente.
 In caso di errore usa Ferma, leggi logs e riprova: non eliminare data.
 
 Backup: FERMA l'app e copia l'intera cartella data in una posizione sicura.
